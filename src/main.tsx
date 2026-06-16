@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import { LoginPage } from "./pages/LoginPage.tsx";
 import { AdminPage } from "./pages/AdminPage.tsx";
 import { supabase } from "./lib/supabase.ts";
+import { Spinner } from "./components/ui.tsx";
 
 const STORAGE_KEY = "truesmm-access-key";
 
@@ -29,7 +30,7 @@ function Root() {
   >("loading");
 
   useEffect(() => {
-    if (isAdminRoute) return; // admin page handles its own auth
+    if (isAdminRoute) return;
     checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdminRoute]);
@@ -55,7 +56,6 @@ function Root() {
         return;
       }
 
-      // 🔥 Expiry check
       if (data.expires_at && Date.now() >= new Date(data.expires_at).getTime()) {
         localStorage.removeItem(STORAGE_KEY);
         setAuthState("unauthenticated");
@@ -65,26 +65,21 @@ function Root() {
       setAuthState("authenticated");
     } catch (err) {
       console.error("Auth check failed:", err);
-      // Network error fallback — keep user in if they had a key
       const savedKey = localStorage.getItem(STORAGE_KEY);
       setAuthState(savedKey && savedKey.trim() ? "authenticated" : "unauthenticated");
     }
   };
 
-  // ===== Admin route =====
   if (isAdminRoute) {
     return <AdminPage />;
   }
 
   if (authState === "loading") {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <span className="text-5xl">🚀</span>
-          <div className="mt-4 flex items-center justify-center gap-2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-            <span className="text-sm text-slate-500">Initializing TRUESMM...</span>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-violet-50">
+        <div className="flex flex-col items-center gap-3">
+          <Spinner size="lg" />
+          <p className="text-sm text-slate-500 font-medium">Loading TRUESMM…</p>
         </div>
       </div>
     );
