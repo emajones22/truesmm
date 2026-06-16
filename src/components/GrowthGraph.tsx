@@ -11,8 +11,8 @@ import {
   YAxis,
 } from "recharts";
 import type { PatternPlan, QuickPatternPreset, DeliveryOption } from "../types/order";
+import { Card, Button } from "./ui";
 
-// 🔥 Favourite = config settings, NOT raw runs
 interface FavouriteConfig {
   id: string;
   savedAt: string;
@@ -33,7 +33,6 @@ interface FavouriteConfig {
   includeComments: boolean;
   includeReposts: boolean;
   peakHoursBoost: boolean;
-  // 🔥 Save actual runs as proportions (0-1) of total views
   runProportions: Array<{
     minutesFromStart: number;
     viewsFraction: number;
@@ -83,10 +82,10 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const presetButtons: Array<{ label: string; value: QuickPatternPreset }> = [
-  { label: "🚀 Viral Boost", value: "viral-boost" },
-  { label: "⚡ Fast Start", value: "fast-start" },
-  { label: "🔥 Trending Push", value: "trending-push" },
-  { label: "🌊 Slow Burn", value: "slow-burn" },
+  { label: "Viral Boost", value: "viral-boost" },
+  { label: "Fast Start", value: "fast-start" },
+  { label: "Trending Push", value: "trending-push" },
+  { label: "Slow Burn", value: "slow-burn" },
 ];
 
 function lineTypeForPattern(patternType: PatternPlan["patternType"]) {
@@ -199,6 +198,15 @@ function buildSteppedGraphData(plan: PatternPlan) {
   }));
 }
 
+const COLORS = {
+  views: "#4f46e5",
+  likes: "#ec4899",
+  shares: "#0ea5e9",
+  saves: "#8b5cf6",
+  reposts: "#06b6d4",
+  comments: "#10b981",
+};
+
 const SteppedTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload || !payload.length) return null;
 
@@ -209,20 +217,25 @@ const SteppedTooltip = ({ active, payload, label }: any) => {
   if (filtered.length === 0) return null;
 
   return (
-    <div
-      style={{
-        background: "#000000",
-        border: "1px solid #eab308",
-        borderRadius: "0.75rem",
-        color: "#d1d5db",
-        fontSize: "12px",
-        padding: "8px 12px",
-      }}
-    >
-      <p style={{ marginBottom: 4, color: "#9ca3af" }}>{label}</p>
+    <div className="bg-white rounded-lg border border-slate-200 shadow-lg px-3 py-2 text-xs">
+      <p className="text-slate-500 mb-1 font-medium">{label}</p>
       {filtered.map((entry: any) => (
-        <p key={entry.name} style={{ color: entry.color, margin: "2px 0" }}>
-          {entry.name}: {Math.round(entry.value)}
+        <p key={entry.name} style={{ color: entry.color }} className="font-medium tabular-nums">
+          {entry.name}: {Math.round(entry.value).toLocaleString()}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+const SmoothTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div className="bg-white rounded-lg border border-slate-200 shadow-lg px-3 py-2 text-xs">
+      <p className="text-slate-500 mb-1 font-medium">{label}</p>
+      {payload.map((entry: any) => (
+        <p key={entry.name} style={{ color: entry.color }} className="font-medium tabular-nums">
+          {entry.name}: {Math.round(entry.value).toLocaleString()}
         </p>
       ))}
     </div>
@@ -259,10 +272,9 @@ export function GrowthGraph({
   const steppedData = useMemo(() => buildSteppedGraphData(safePlan), [safePlan]);
   const curveType = lineTypeForPattern(safePlan.patternType);
 
-    const handleSaveFavourite = () => {
+  const handleSaveFavourite = () => {
     const name = favouriteName.trim() || `${safePlan.patternName} · ${safePlan.totalRuns} runs`;
 
-    // 🔥 Calculate total quantities to derive fractions
     const savedTotalViews = safePlan.runs.reduce((sum, r) => sum + (r.views || 0), 0);
     const savedTotalLikes = safePlan.runs.reduce((sum, r) => sum + (r.likes || 0), 0);
     const savedTotalShares = safePlan.runs.reduce((sum, r) => sum + (r.shares || 0), 0);
@@ -270,7 +282,6 @@ export function GrowthGraph({
     const savedTotalComments = safePlan.runs.reduce((sum, r) => sum + (r.comments || 0), 0);
     const savedTotalReposts = safePlan.runs.reduce((sum, r) => sum + (r.reposts || 0), 0);
 
-    // 🔥 Store each run as a fraction of total (so it scales to any view count)
     const runProportions = safePlan.runs.map((r) => ({
       minutesFromStart: r.minutesFromStart,
       viewsFraction: savedTotalViews > 0 ? (r.views || 0) / savedTotalViews : 0,
@@ -321,38 +332,38 @@ export function GrowthGraph({
   };
 
   return (
-    <section className="rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-gray-900 to-black p-5">
+    <Card padding="md">
       {/* Header */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 flex-wrap">
-          <h2 className="text-lg font-semibold text-yellow-400">📈 Growth Projection</h2>
+          <h2 className="text-base font-semibold text-slate-900">Growth projection</h2>
 
-          <div className="inline-flex rounded-lg border border-yellow-500/30 bg-black p-0.5">
+          <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
             <button
               type="button"
               onClick={() => setGraphMode("smooth")}
-              className={`rounded-md px-2 py-1 text-[10px] font-medium transition ${
+              className={`rounded-md px-3 py-1 text-xs font-medium transition ${
                 graphMode === "smooth"
-                  ? "bg-yellow-500/20 text-yellow-300"
-                  : "text-gray-500 hover:text-yellow-400"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              〰️ Smooth
+              Smooth
             </button>
             <button
               type="button"
               onClick={() => setGraphMode("stepped")}
-              className={`rounded-md px-2 py-1 text-[10px] font-medium transition ${
+              className={`rounded-md px-3 py-1 text-xs font-medium transition ${
                 graphMode === "stepped"
-                  ? "bg-yellow-500/20 text-yellow-300"
-                  : "text-gray-500 hover:text-yellow-400"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              📊 Stepped
+              Stepped
             </button>
           </div>
 
-          {/* 🔥 Favourite controls — only in stepped mode */}
+          {/* Favourite controls */}
           {graphMode === "stepped" && (
             <div className="flex items-center gap-2">
               {showNameInput ? (
@@ -362,7 +373,7 @@ export function GrowthGraph({
                     value={favouriteName}
                     onChange={(e) => setFavouriteName(e.target.value)}
                     placeholder="Name this config..."
-                    className="w-32 rounded-md border border-pink-500/30 bg-black px-2 py-0.5 text-[10px] text-white placeholder-gray-600 focus:border-pink-500/60 focus:outline-none"
+                    className="w-36 text-sm"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleSaveFavourite();
@@ -372,50 +383,31 @@ export function GrowthGraph({
                       }
                     }}
                   />
-                  <button
-                    type="button"
-                    onClick={handleSaveFavourite}
-                    className="rounded-md border border-pink-500/40 bg-pink-500/20 px-2 py-0.5 text-[10px] text-pink-300 hover:bg-pink-500/30 transition"
-                  >
-                    ✓ Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowNameInput(false);
-                      setFavouriteName("");
-                    }}
-                    className="text-[10px] text-gray-500 hover:text-gray-300"
-                  >
+                  <Button size="sm" variant="primary" onClick={handleSaveFavourite}>
+                    Save
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowNameInput(false); setFavouriteName(""); }}>
                     ✕
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  variant={justSaved ? "success" : "outline"}
                   onClick={() => setShowNameInput(true)}
-                  className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition ${
-                    justSaved
-                      ? "border-pink-500/60 bg-pink-500/20 text-pink-300 cursor-default"
-                      : "border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 hover:border-pink-500/60"
-                  }`}
                 >
-                  {justSaved ? "❤️ Saved!" : "🤍 Save Config"}
-                </button>
+                  {justSaved ? "Saved" : "Save config"}
+                </Button>
               )}
 
               {favourites.length > 0 && (
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  variant={showFavourites ? "secondary" : "ghost"}
                   onClick={() => setShowFavourites((prev) => !prev)}
-                  className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-medium transition ${
-                    showFavourites
-                      ? "border-pink-500/50 bg-pink-500/15 text-pink-300"
-                      : "border-gray-700 text-gray-500 hover:text-pink-400"
-                  }`}
                 >
-                  📋 {favourites.length} saved
-                </button>
+                  {favourites.length} saved
+                </Button>
               )}
             </div>
           )}
@@ -431,171 +423,129 @@ export function GrowthGraph({
                   key={preset.value}
                   type="button"
                   onClick={() => onApplyPreset(preset.value)}
-                  className={`rounded-lg border px-2.5 py-1.5 text-xs transition ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                     active
-                      ? "border-yellow-500/70 bg-yellow-500/20 text-yellow-300"
-                      : "border-gray-700 text-gray-500 hover:border-yellow-500/30 hover:text-yellow-400"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
                   {preset.label}
                 </button>
               );
             })}
-            <button
-              type="button"
-              onClick={onGenerate}
-              className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 px-3 py-1.5 text-xs font-medium text-yellow-300 transition hover:bg-yellow-500/20"
-            >
-              🔄 New Pattern
-            </button>
+            <Button size="sm" variant="outline" onClick={onGenerate}>
+              New pattern
+            </Button>
           </div>
         )}
       </div>
 
-      {/* 🔥 Favourites Panel */}
+      {/* Favourites panel */}
       {showFavourites && graphMode === "stepped" && favourites.length > 0 && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="mb-4 rounded-xl border border-pink-500/20 bg-pink-500/5 p-3"
+          className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3"
         >
-          <h3 className="text-[10px] font-semibold text-pink-400 mb-2 uppercase tracking-wider">
-            ❤️ Saved Configs ({favourites.length}/10)
-          </h3>
+          <p className="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">
+            Saved configs ({favourites.length}/10)
+          </p>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {favourites.map((fav) => (
               <div
                 key={fav.id}
-                className="flex items-center justify-between rounded-lg border border-pink-500/20 bg-black/50 px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-pink-300 truncate">
-                    {fav.name}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    <span className="text-[9px] text-gray-600">
-                      {fav.delivery.label} · {fav.variancePercent}% var · {fav.risk}
-                    </span>
-                    {fav.quickPreset && (
-                      <span className="rounded bg-yellow-500/20 px-1 py-0 text-[8px] text-yellow-400">
-                        {fav.quickPreset}
-                      </span>
-                    )}
-                    <span className="flex gap-0.5 text-[9px]">
-                      {fav.includeLikes && <span title="Likes">❤️</span>}
-                      {fav.includeShares && <span title="Shares">🔄</span>}
-                      {fav.includeSaves && <span title="Saves">💾</span>}
-                      {fav.includeComments && <span title="Comments">💬</span>}
-                      {fav.includeReposts && <span title="Reposts">🔁</span>}
-                      {fav.peakHoursBoost && <span title="Peak Hours">🔥</span>}
-                    </span>
-                    <span className="text-[9px] text-gray-700">
-                      {new Date(fav.savedAt).toLocaleDateString()}
-                    </span>
+                  <p className="text-sm font-medium text-slate-900 truncate">{fav.name}</p>
+                  <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1 text-xs text-slate-500">
+                    <span>{fav.delivery.label}</span>
+                    <span>{fav.variancePercent}% var</span>
+                    <span className="capitalize">{fav.risk}</span>
+                    <span>{new Date(fav.savedAt).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-3 flex-shrink-0">
                   {onApplyFavourite && (
-                    <button
-                      type="button"
+                    <Button
+                      size="sm"
+                      variant="success"
                       onClick={() => {
                         onApplyFavourite(fav);
                         setShowFavourites(false);
                       }}
-                      className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300 hover:bg-emerald-500/20 transition"
-                      title="Apply this config to current order"
                     >
-                      ▶️ Use
-                    </button>
+                      Apply
+                    </Button>
                   )}
                   <button
                     type="button"
                     onClick={() => handleDeleteFavourite(fav.id)}
-                    className="text-[10px] text-gray-600 hover:text-red-400 transition"
+                    className="text-xs text-slate-400 hover:text-rose-600 transition"
                     title="Remove"
                   >
-                    🗑️
+                    ✕
                   </button>
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-[9px] text-gray-600 mt-2">
-            ℹ️ Configs are saved in your browser. Click ▶️ Use to apply settings to any view count. Max 10.
-          </p>
         </motion.div>
       )}
 
       {/* Chart */}
       <motion.div
         key={`${safePlan.patternId}-${safePlan.totalRuns}-${graphMode}`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        className="h-80"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35 }}
+        className="h-72 sm:h-80"
       >
         {graphMode === "smooth" ? (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={smoothData} margin={{ top: 14, right: 20, left: 0, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="label" tick={{ fill: "#9ca3af", fontSize: 11 }} minTickGap={26} />
-              <YAxis tick={{ fill: "#9ca3af", fontSize: 11 }} width={52} />
-              <Tooltip
-                contentStyle={{
-                  background: "#000000",
-                  border: "1px solid #eab308",
-                  borderRadius: "0.75rem",
-                  color: "#d1d5db",
-                  fontSize: "12px",
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: "12px", color: "#d1d5db" }} />
-              <Line type={curveType} dataKey="views" name="Views" stroke="#eab308" strokeWidth={2.5} dot={false} isAnimationActive animationDuration={900} />
-              <Line type={curveType} dataKey="likes" name="Likes" stroke="#a78bfa" strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
-              <Line type={curveType} dataKey="shares" name="Shares" stroke="#f59e0b" strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
-              <Line type={curveType} dataKey="saves" name="Saves" stroke="#34d399" strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
-              <Line type={curveType} dataKey="reposts" name="Reposts" stroke="#06b6d4" strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
-              <Line type={curveType} dataKey="comments" name="Comments" stroke="#f472b6" strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
+            <LineChart data={smoothData} margin={{ top: 14, right: 16, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e6e8ec" />
+              <XAxis dataKey="label" tick={{ fill: "#64748b", fontSize: 11 }} minTickGap={26} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
+              <YAxis tick={{ fill: "#64748b", fontSize: 11 }} width={52} axisLine={false} tickLine={false} />
+              <Tooltip content={<SmoothTooltip />} />
+              <Legend wrapperStyle={{ fontSize: "12px", color: "#475569", paddingTop: 8 }} iconType="circle" />
+              <Line type={curveType} dataKey="views" name="Views" stroke={COLORS.views} strokeWidth={2.5} dot={false} isAnimationActive animationDuration={900} />
+              <Line type={curveType} dataKey="likes" name="Likes" stroke={COLORS.likes} strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
+              <Line type={curveType} dataKey="shares" name="Shares" stroke={COLORS.shares} strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
+              <Line type={curveType} dataKey="saves" name="Saves" stroke={COLORS.saves} strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
+              <Line type={curveType} dataKey="reposts" name="Reposts" stroke={COLORS.reposts} strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
+              <Line type={curveType} dataKey="comments" name="Comments" stroke={COLORS.comments} strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
             </LineChart>
           </ResponsiveContainer>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={steppedData} margin={{ top: 14, right: 20, left: 0, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#111" opacity={0.3} />
-              <XAxis dataKey="time" stroke="#666" tick={{ fill: "#9ca3af", fontSize: 11 }} />
-              <YAxis stroke="#666" tick={{ fill: "#9ca3af", fontSize: 11 }} width={52} />
+            <LineChart data={steppedData} margin={{ top: 14, right: 16, left: 0, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e6e8ec" />
+              <XAxis dataKey="time" stroke="#cbd5e1" tick={{ fill: "#64748b", fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="#cbd5e1" tick={{ fill: "#64748b", fontSize: 11 }} width={52} axisLine={false} tickLine={false} />
               <Tooltip content={<SteppedTooltip />} />
-              <Legend wrapperStyle={{ fontSize: "12px", color: "#d1d5db" }} />
-              <Line type="monotone" dataKey="views" stroke="#3b82f6" opacity={0.1} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
-              <Line type="monotone" dataKey="likes" stroke="#ec4899" opacity={0.1} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
-              <Line type="monotone" dataKey="shares" stroke="#22c55e" opacity={0.1} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
-              <Line type="monotone" dataKey="saves" stroke="#eab308" opacity={0.1} dot={false} strokeDasharray="5 5" name="planned-saves" legendType="none" tooltipType="none" />
-              <Line type="monotone" dataKey="reposts" stroke="#06b6d4" opacity={0.1} dot={false} strokeDasharray="5 5" name="planned-reposts" legendType="none" tooltipType="none" />
-              <Line type="monotone" dataKey="comments" stroke="#a855f7" opacity={0.1} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
-              <Line type="monotone" dataKey="views" stroke="#3b82f6" strokeWidth={2} dot={false} name="Views" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="likes" stroke="#ec4899" strokeWidth={2} dot={false} name="Likes" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="shares" stroke="#22c55e" strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="saves" stroke="#eab308" strokeWidth={2} dot={false} name="Saves" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="reposts" stroke="#06b6d4" strokeWidth={2} dot={false} name="Reposts" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="comments" stroke="#a855f7" strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
+              <Legend wrapperStyle={{ fontSize: "12px", color: "#475569", paddingTop: 8 }} iconType="circle" />
+              <Line type="monotone" dataKey="views" stroke={COLORS.views} strokeWidth={2} dot={false} name="Views" isAnimationActive animationDuration={900} />
+              <Line type="monotone" dataKey="likes" stroke={COLORS.likes} strokeWidth={2} dot={false} name="Likes" isAnimationActive animationDuration={900} />
+              <Line type="monotone" dataKey="shares" stroke={COLORS.shares} strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
+              <Line type="monotone" dataKey="saves" stroke={COLORS.saves} strokeWidth={2} dot={false} name="Saves" isAnimationActive animationDuration={900} />
+              <Line type="monotone" dataKey="reposts" stroke={COLORS.reposts} strokeWidth={2} dot={false} name="Reposts" isAnimationActive animationDuration={900} />
+              <Line type="monotone" dataKey="comments" stroke={COLORS.comments} strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
             </LineChart>
           </ResponsiveContainer>
         )}
       </motion.div>
 
-      <div className="mt-2 flex items-center justify-between">
-        <p className="text-[9px] text-gray-600">
+      <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+        <p>
           {graphMode === "smooth"
-            ? "〰️ Smooth: Interpolated cumulative growth curve"
-            : "📊 Stepped: Per-run cumulative view (same as Orders page)"}
+            ? "Smooth: Interpolated cumulative growth curve"
+            : "Stepped: Per-run cumulative view"}
         </p>
         {graphMode === "stepped" && (
-          <p className="text-[9px] text-pink-600">
-            🤍 Save config to reuse with any view count
-          </p>
+          <p>Save config to reuse with any view count</p>
         )}
       </div>
-    </section>
+    </Card>
   );
 }
