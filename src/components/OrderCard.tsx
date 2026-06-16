@@ -11,6 +11,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
+import { Card, Button, StatusPill } from "./ui";
 
 interface OrderCardProps {
   order: CreatedOrder;
@@ -19,14 +20,14 @@ interface OrderCardProps {
   controlBusy: boolean;
 }
 
-const statusColor: Record<OrderStatus, string> = {
-  running: "text-yellow-300",
-  paused: "text-amber-300",
-  cancelled: "text-red-300",
-  completed: "text-emerald-300",
-  processing: "text-yellow-300",
-  failed: "text-red-300",
-  pending: "text-gray-300",
+const STATUS_KINDS: Record<OrderStatus, any> = {
+  running: "running",
+  paused: "paused",
+  cancelled: "cancelled",
+  completed: "completed",
+  processing: "running",
+  failed: "failed",
+  pending: "pending",
 };
 
 export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardProps) {
@@ -102,15 +103,13 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
 
   const shortLink =
     order.link.length > 56
-      ? `${order.link.slice(0, 36)}...${order.link.slice(-14)}`
+      ? `${order.link.slice(0, 36)}…${order.link.slice(-14)}`
       : order.link;
 
   const handleControl = async (action: "pause" | "resume" | "cancel") => {
     try {
       if (action === "cancel") {
-        const confirmCancel = window.confirm(
-          "Are you sure you want to cancel this mission?"
-        );
+        const confirmCancel = window.confirm("Are you sure you want to cancel this mission?");
         if (!confirmCancel) return;
       }
       onControl(order, action);
@@ -121,212 +120,163 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
   };
 
   return (
-    <article className="rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-gray-900 to-black p-3 sm:p-5">
-
-      {/* Top Section */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
-
-        {/* Left */}
-        <div className="space-y-1.5 min-w-0">
-          <p className="text-[10px] uppercase tracking-wide text-gray-600">Mission ID</p>
-          <h3 className="text-base sm:text-lg font-semibold text-yellow-400">{order.id}</h3>
-          <p className="text-xs sm:text-sm text-yellow-300">
-            {order.name || `Mission #${order.id}`}
-          </p>
-          <p
-            className="max-w-full truncate text-xs sm:text-sm text-gray-500"
-            title={order.link || "No link provided"}
-          >
+    <Card padding="md" className="space-y-4">
+      {/* Top section */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="space-y-1 min-w-0 flex-1">
+          <p className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">Mission</p>
+          <h3 className="text-base font-semibold text-slate-900">
+            {order.name || `Mission #${order.id.slice(0, 8)}`}
+          </h3>
+          <p className="text-xs text-slate-500 truncate max-w-full" title={order.link}>
             {shortLink || "No link provided"}
           </p>
           {order.schedulerOrderId && (
-            <p className="text-[10px] text-gray-600 font-mono">
-              Scheduler: {order.schedulerOrderId}
-            </p>
+            <p className="text-[10px] text-slate-400 font-mono">ID: {order.schedulerOrderId}</p>
           )}
         </div>
 
-        {/* Right */}
-        <div className="flex flex-row flex-wrap gap-x-4 gap-y-1 sm:flex-col sm:space-y-1.5 sm:text-right">
-          <p className="text-xs sm:text-sm text-gray-500">
-            Panel ID:{" "}
-            <span className="font-semibold text-yellow-300">{order.smmOrderId}</span>
-          </p>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Service:{" "}
-            <span className="font-semibold text-gray-300">{order.serviceId}</span>
-          </p>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Quantity:{" "}
-            <span className="font-semibold text-gray-300">{order.totalViews}</span>
-          </p>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Status:{" "}
-            <span className={`font-semibold ${statusColor[effectiveStatus]}`}>
-              {effectiveStatus}
-            </span>
-          </p>
-          {order.errorMessage && (
-            <p className="text-[10px] sm:text-xs text-red-400">
-              Error: {order.errorMessage}
-            </p>
-          )}
+        <div className="flex flex-col items-start sm:items-end gap-1">
+          <StatusPill kind={STATUS_KINDS[effectiveStatus]} className="capitalize">
+            {effectiveStatus}
+          </StatusPill>
           {finishTime && (
-            <p className="text-[10px] sm:text-xs text-gray-600">
-              ETA:{" "}
-              {finishTime instanceof Date
-                ? finishTime.toLocaleString()
-                : new Date(finishTime).toLocaleString()}
+            <p className="text-xs text-slate-500">
+              ETA: {finishTime instanceof Date ? finishTime : new Date(finishTime)
+                ? new Date(finishTime).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+                : "—"}
             </p>
           )}
-          <p className="text-[10px] sm:text-xs text-gray-600">
-            Updated:{" "}
-            {new Date(order.lastUpdatedAt || order.createdAt).toLocaleString()}
+          <p className="text-[10px] text-slate-400">
+            Updated {new Date(order.lastUpdatedAt || order.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
       </div>
 
-      {/* Progress */}
-      <div className="mt-3 sm:mt-4 space-y-2">
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Progress</span>
-          <span>{progressPercent}%</span>
+      {order.errorMessage && (
+        <div className="rounded-md bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">
+          {order.errorMessage}
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-gray-800">
+      )}
+
+      {/* Progress */}
+      <div>
+        <div className="flex items-center justify-between text-xs text-slate-600 mb-1.5">
+          <span>Progress</span>
+          <span className="font-semibold text-slate-900 tabular-nums">{progressPercent}%</span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
           <div
-            className="h-full rounded-full bg-yellow-500 transition-all"
+            className={`h-full rounded-full transition-all duration-500 ${
+              progressPercent === 100 ? "bg-emerald-500" : progressPercent > 50 ? "bg-indigo-500" : "bg-amber-500"
+            }`}
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-slate-500 mt-1">
           {completedRuns} / {totalRuns} runs completed
         </p>
-
-        {/* Graph */}
-        {plannedData.length > 0 && (
-          <div className="mt-3 sm:mt-4 h-36 sm:h-48 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={plannedData}
-                margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#111" opacity={0.3} />
-                <XAxis
-                  dataKey="time"
-                  stroke="#666"
-                  tick={{ fontSize: 8 }}
-                  tickFormatter={(time) => {
-                    try {
-                      const d = new Date(time);
-                      return (
-                        d.getHours() +
-                        ":" +
-                        String(d.getMinutes()).padStart(2, "0")
-                      );
-                    } catch {
-                      return "";
-                    }
-                  }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  stroke="#666"
-                  tick={{ fontSize: 8 }}
-                  width={32}
-                  tickFormatter={(v) =>
-                    v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
-                  }
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "#000",
-                    border: "1px solid #eab308",
-                    borderRadius: "8px",
-                    fontSize: "10px",
-                    color: "#e5e7eb",
-                  }}
-                  labelFormatter={(label) => {
-                    try {
-                      return new Date(label).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-                    } catch {
-                      return String(label);
-                    }
-                  }}
-                  formatter={(value: number, name: string) => {
-                    if (String(name).startsWith("planned")) return [null as unknown as number, ""];
-                    return [
-                      typeof value === "number" ? value.toLocaleString() : value,
-                      name,
-                    ];
-                  }}
-                />
-                {/* Faded planned lines */}
-                <Line type="monotone" dataKey="views"    stroke="#3b82f6" opacity={0.15} dot={false} strokeDasharray="4 4" name="planned-views" />
-                <Line type="monotone" dataKey="likes"    stroke="#ec4899" opacity={0.15} dot={false} strokeDasharray="4 4" name="planned-likes" />
-                <Line type="monotone" dataKey="shares"   stroke="#22c55e" opacity={0.15} dot={false} strokeDasharray="4 4" name="planned-shares" />
-                <Line type="monotone" dataKey="saves"    stroke="#eab308" opacity={0.15} dot={false} strokeDasharray="4 4" name="planned-saves" />
-                <Line type="monotone" dataKey="comments" stroke="#a855f7" opacity={0.15} dot={false} strokeDasharray="4 4" name="planned-comments" />
-                {/* Solid lines */}
-                <Line type="monotone" dataKey="views"    stroke="#3b82f6" strokeWidth={2}   dot={false} name="views" />
-                <Line type="monotone" dataKey="likes"    stroke="#ec4899" strokeWidth={1.5} dot={false} name="likes" />
-                <Line type="monotone" dataKey="shares"   stroke="#22c55e" strokeWidth={1.5} dot={false} name="shares" />
-                <Line type="monotone" dataKey="saves"    stroke="#eab308" strokeWidth={1.5} dot={false} name="saves" />
-                <Line type="monotone" dataKey="comments" stroke="#a855f7" strokeWidth={1.5} dot={false} name="comments" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
       </div>
 
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          { label: "Views", value: `${(order.totalViews / 1000).toFixed(0)}k`, color: "text-indigo-600" },
+          { label: "Likes", value: order.engagement.likes, color: "text-pink-600" },
+          { label: "Shares", value: order.engagement.shares, color: "text-sky-600" },
+          { label: "Saves", value: order.engagement.saves, color: "text-violet-600" },
+        ].map((s) => (
+          <div key={s.label} className="rounded-md bg-slate-50 px-3 py-2">
+            <p className={`text-base font-bold ${s.color} tabular-nums`}>{s.value}</p>
+            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Graph */}
+      {plannedData.length > 0 && (
+        <div className="h-36 sm:h-44 w-full -mx-1">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={plannedData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e6e8ec" />
+              <XAxis
+                dataKey="time"
+                stroke="#cbd5e1"
+                tick={{ fontSize: 10, fill: "#64748b" }}
+                tickFormatter={(time) => {
+                  try {
+                    const d = new Date(time);
+                    return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+                  } catch { return ""; }
+                }}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                stroke="#cbd5e1"
+                tick={{ fontSize: 10, fill: "#64748b" }}
+                width={32}
+                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "#fff",
+                  border: "1px solid #e6e8ec",
+                  borderRadius: "8px",
+                  fontSize: "11px",
+                  color: "#475569",
+                }}
+                labelFormatter={(label) => {
+                  try { return new Date(label).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
+                  catch { return String(label); }
+                }}
+              />
+              <Line type="monotone" dataKey="views" stroke="#4f46e5" strokeWidth={2} dot={false} name="Views" />
+              <Line type="monotone" dataKey="likes" stroke="#ec4899" strokeWidth={1.5} dot={false} name="Likes" />
+              <Line type="monotone" dataKey="shares" stroke="#0ea5e9" strokeWidth={1.5} dot={false} name="Shares" />
+              <Line type="monotone" dataKey="saves" stroke="#8b5cf6" strokeWidth={1.5} dot={false} name="Saves" />
+              <Line type="monotone" dataKey="comments" stroke="#10b981" strokeWidth={1.5} dot={false} name="Comments" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       {/* Control Buttons */}
-      <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200">
+        <Button
+          size="sm"
+          variant="secondary"
           disabled={controlBusy || effectiveStatus !== "running"}
           onClick={() => handleControl("pause")}
-          className="rounded-lg border border-amber-500/50 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300 transition hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          ⏸️ Pause
-        </button>
-        <button
-          type="button"
+          Pause
+        </Button>
+        <Button
+          size="sm"
+          variant="success"
           disabled={controlBusy || effectiveStatus !== "paused"}
           onClick={() => handleControl("resume")}
-          className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          ▶️ Resume
-        </button>
-        <button
-          type="button"
-          disabled={
-            controlBusy ||
-            effectiveStatus === "cancelled" ||
-            effectiveStatus === "completed"
-          }
+          Resume
+        </Button>
+        <Button
+          size="sm"
+          variant="danger"
+          disabled={controlBusy || effectiveStatus === "cancelled" || effectiveStatus === "completed"}
           onClick={() => handleControl("cancel")}
-          className="rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          ❌ Cancel
-        </button>
-        <button
-          type="button"
-          onClick={() => onClone(order)}
-          className="rounded-lg border border-yellow-500/50 bg-yellow-500/10 px-3 py-1.5 text-xs text-yellow-300 transition hover:bg-yellow-500/20"
-        >
-          📋 Clone
-        </button>
-        <button
-          type="button"
+          Cancel
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => onClone(order)}>
+          Clone
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
           onClick={() => setExpanded((prev) => !prev)}
-          className="ml-auto text-xs sm:text-sm text-yellow-400 hover:text-yellow-300 transition"
+          className="ml-auto"
         >
-          {expanded ? "🔼 Hide Runs" : `📋 View Runs (${totalRuns})`}
-        </button>
+          {expanded ? "Hide runs" : `Runs (${totalRuns})`}
+        </Button>
       </div>
 
       {/* Run Table */}
@@ -336,9 +286,9 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden mt-3"
+            className="overflow-hidden"
           >
-            <div className="rounded-lg border border-yellow-500/20 bg-black/50 p-3">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <RunTable
                 runs={safeRuns}
                 runStatuses={safeRunStatuses}
@@ -354,6 +304,6 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
           </motion.div>
         )}
       </AnimatePresence>
-    </article>
+    </Card>
   );
 }
