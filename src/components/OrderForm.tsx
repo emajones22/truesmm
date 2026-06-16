@@ -1,4 +1,5 @@
 import type { DeliveryOption } from "../types/order";
+import { Card, Input, Select, Textarea, Toggle } from "./ui";
 
 interface OrderFormProps {
   orderName: string;
@@ -35,25 +36,6 @@ interface OrderFormProps {
   onCustomHoursChange: (hours: number) => void;
 }
 
-function Toggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: (value: boolean) => void }) {
-  return (
-    <label className="flex items-center justify-between rounded-xl border border-yellow-500/20 bg-black px-4 py-3">
-      <span className="text-sm text-gray-400">{label}</span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative h-6 w-11 rounded-full transition-colors ${checked ? "bg-yellow-500" : "bg-gray-700"}`}
-      >
-        <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`}
-        />
-      </button>
-    </label>
-  );
-}
-
 export function OrderForm(props: OrderFormProps) {
   const deliveryModes: DeliveryOption[] = [
     { mode: "auto", label: "Auto", hours: props.delivery.mode === "auto" ? props.delivery.hours : 18 },
@@ -65,112 +47,85 @@ export function OrderForm(props: OrderFormProps) {
   ];
 
   return (
-    <section className="space-y-6">
-      <div className="rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-gray-900 to-black p-5">
-        <h2 className="mb-4 text-lg font-semibold text-yellow-400">1. Target Input</h2>
+    <div className="space-y-6">
+      <Card padding="md">
+        <h2 className="text-base font-semibold text-slate-900 mb-4">Target</h2>
         <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm text-gray-500">Mission Name (optional)</label>
-            <input
-              value={props.orderName}
-              onChange={(event) => props.onOrderNameChange(event.target.value)}
-              placeholder="Campaign name"
-              className="w-full rounded-xl border border-yellow-500/30 bg-black px-3 py-2.5 text-sm text-gray-100 outline-none ring-yellow-500/40 transition placeholder-gray-700 focus:ring-2"
+          <Input
+            label="Mission name (optional)"
+            value={props.orderName}
+            onChange={(event) => props.onOrderNameChange(event.target.value)}
+            placeholder="Campaign name"
+          />
+          <Input
+            label="Target URL"
+            value={props.postUrl}
+            onChange={(event) => props.onPostUrlChange(event.target.value)}
+            placeholder="https://instagram.com/reel/..."
+          />
+          <Textarea
+            label="Bulk targets"
+            value={props.bulkLinks}
+            onChange={(event) => props.onBulkLinksChange(event.target.value)}
+            rows={4}
+            placeholder={"https://instagram.com/reel/abc...\nhttps://instagram.com/reel/xyz..."}
+            hint="One URL per line"
+          />
+          <Input
+            label="Total views"
+            type="number"
+            value={props.totalViews}
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              props.onTotalViewsChange(Number.isFinite(next) ? next : 0);
+            }}
+            hint="Minimum 100 views per run applied automatically"
+          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Select
+              label="API"
+              value={props.selectedApiId}
+              onChange={(event) => props.onSelectedApiChange(event.target.value)}
+              options={props.apiOptions}
+              placeholder="No API selected"
+            />
+            <Select
+              label="Bundle"
+              value={props.selectedBundleId}
+              onChange={(event) => props.onSelectedBundleChange(event.target.value)}
+              options={props.bundleOptions}
+              placeholder="Select bundle"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm text-gray-500">Target URL</label>
-            <input
-              value={props.postUrl}
-              onChange={(event) => props.onPostUrlChange(event.target.value)}
-              placeholder="https://instagram.com/reel/..."
-              className="w-full rounded-xl border border-yellow-500/30 bg-black px-3 py-2.5 text-sm text-gray-100 outline-none ring-yellow-500/40 transition placeholder-gray-700 focus:ring-2"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm text-gray-500">Bulk Targets (one per line)</label>
-            <textarea
-              value={props.bulkLinks}
-              onChange={(event) => props.onBulkLinksChange(event.target.value)}
-              rows={4}
-              placeholder={"https://instagram.com/reel/abc...\nhttps://instagram.com/reel/xyz..."}
-              className="w-full resize-y rounded-xl border border-yellow-500/30 bg-black px-3 py-2.5 text-sm text-gray-100 outline-none ring-yellow-500/40 transition placeholder-gray-700 focus:ring-2"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm text-gray-500">Total Views</label>
-            <input
-              type="number"
-              value={props.totalViews}
-              onChange={(event) => {
-                const next = Number(event.target.value);
-                props.onTotalViewsChange(Number.isFinite(next) ? next : 0);
-              }}
-              className="w-full rounded-xl border border-yellow-500/30 bg-black px-3 py-2.5 text-sm text-gray-100 outline-none ring-yellow-500/40 transition focus:ring-2"
-            />
-            <p className="text-xs text-gray-600">Minimum 100 views per run applied automatically</p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm text-gray-500">Select API</label>
-              <select
-                value={props.selectedApiId}
-                onChange={(event) => props.onSelectedApiChange(event.target.value)}
-                className="w-full rounded-xl border border-yellow-500/30 bg-black px-3 py-2.5 text-sm text-gray-100"
-              >
-                <option value="">No API selected</option>
-                {props.apiOptions.map((api) => (
-                  <option key={api.id} value={api.id}>
-                    {api.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm text-gray-500">Select Bundle</label>
-              <select
-                value={props.selectedBundleId}
-                onChange={(event) => props.onSelectedBundleChange(event.target.value)}
-                className="w-full rounded-xl border border-yellow-500/30 bg-black px-3 py-2.5 text-sm text-gray-100"
-              >
-                <option value="">Select bundle</option>
-                {props.bundleOptions.map((bundle) => (
-                  <option key={bundle.id} value={bundle.id}>
-                    {bundle.name}
-                  </option>
-                ))}
-              </select>
+          <Input
+            label="Start delay (hours)"
+            type="number"
+            min={0}
+            max={168}
+            value={props.startDelayHours}
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              props.onStartDelayHoursChange(Number.isFinite(next) ? next : 0);
+            }}
+            hint="Hours until mission deployment"
+          />
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+            <p className="text-sm font-medium text-slate-700">Engagement</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Toggle checked={props.includeLikes} label="Likes" onChange={props.onToggleLikes} />
+              <Toggle checked={props.includeShares} label="Shares" onChange={props.onToggleShares} />
+              <Toggle checked={props.includeSaves} label="Saves" onChange={props.onToggleSaves} />
+              <Toggle checked={props.includeComments} label="Comments" onChange={props.onToggleComments} />
             </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm text-gray-500">Start Delay (hours)</label>
-            <input
-              type="number"
-              min={0}
-              max={168}
-              value={props.startDelayHours}
-              onChange={(event) => {
-                const next = Number(event.target.value);
-                props.onStartDelayHoursChange(Number.isFinite(next) ? next : 0);
-              }}
-              className="w-full rounded-xl border border-yellow-500/30 bg-black px-3 py-2.5 text-sm text-gray-100 outline-none ring-yellow-500/40 transition focus:ring-2"
-            />
-            <p className="text-xs text-gray-600">Hours until mission deployment</p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-4">
-  <Toggle checked={props.includeLikes} label="Likes" onChange={props.onToggleLikes} />
-  <Toggle checked={props.includeShares} label="Shares" onChange={props.onToggleShares} />
-  <Toggle checked={props.includeSaves} label="Saves" onChange={props.onToggleSaves} />
-  <Toggle checked={props.includeComments} label="Comments" onChange={props.onToggleComments} />
-</div>
         </div>
-      </div>
+      </Card>
 
-      <div className="rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-gray-900 to-black p-5">
-        <h2 className="mb-4 text-lg font-semibold text-yellow-400">2. Advanced Controls</h2>
+      <Card padding="md">
+        <h2 className="text-base font-semibold text-slate-900 mb-4">Advanced</h2>
         <div className="space-y-5">
           <div>
-            <p className="mb-2 text-sm text-gray-500">Delivery Time</p>
+            <p className="text-sm font-medium text-slate-700 mb-2">Delivery time</p>
             <div className="flex flex-wrap gap-2">
               {deliveryModes.map((option) => {
                 const active = props.delivery.label === option.label;
@@ -179,10 +134,10 @@ export function OrderForm(props: OrderFormProps) {
                     key={option.label}
                     type="button"
                     onClick={() => props.onDeliveryChange(option)}
-                    className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+                    className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                       active
-                        ? "border-yellow-500/70 bg-yellow-500/20 text-yellow-300"
-                        : "border-gray-700 text-gray-500 hover:border-yellow-500/30"
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
                     {option.label}
@@ -191,21 +146,22 @@ export function OrderForm(props: OrderFormProps) {
               })}
             </div>
             {props.delivery.mode === "custom" && (
-              <input
+              <Input
                 type="number"
                 min={1}
                 max={96}
                 value={props.customHours}
                 onChange={(event) => props.onCustomHoursChange(Number(event.target.value) || 1)}
-                className="mt-3 w-36 rounded-lg border border-yellow-500/30 bg-black px-3 py-2 text-sm text-gray-100 outline-none ring-yellow-500/40 focus:ring-2"
+                className="mt-3 w-36"
+                label="Hours"
               />
             )}
           </div>
 
           <div>
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="text-gray-500">Random Variance</span>
-              <span className="font-medium text-yellow-300">{props.variancePercent}%</span>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-700">Random variance</span>
+              <span className="text-sm font-semibold text-indigo-600 tabular-nums">{props.variancePercent}%</span>
             </div>
             <input
               type="range"
@@ -213,7 +169,7 @@ export function OrderForm(props: OrderFormProps) {
               max={50}
               value={props.variancePercent}
               onChange={(event) => props.onVarianceChange(Number(event.target.value))}
-              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-gray-700 accent-yellow-500"
+              className="w-full"
             />
           </div>
 
@@ -223,7 +179,7 @@ export function OrderForm(props: OrderFormProps) {
             label="Night boost (6 PM – 11 PM)"
           />
         </div>
-      </div>
-    </section>
+      </Card>
+    </div>
   );
 }
