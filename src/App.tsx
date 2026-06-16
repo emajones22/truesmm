@@ -35,41 +35,21 @@ const NAV_ITEMS: { key: NavKey; label: string; icon: string }[] = [
   { key: "ratios", label: "Ratios", icon: "⚖️" },
 ];
 
-const BATMAN_QUOTES = [
-  "It's not who I am underneath, but what I do that defines me.",
-  "The night is darkest just before the dawn.",
-  "I'm whatever Gotham needs me to be.",
-  "A hero can be anyone.",
-  "Why do we fall? So we can learn to pick ourselves up.",
-  "It's not about what I want. It's about what's fair.",
-  "Criminals are a superstitious, cowardly lot.",
-  "I wear a mask. And that mask is not to hide who I am, but to create what I am.",
-  "The training is nothing! The will is everything!",
-  "Sometimes the truth isn't good enough. Sometimes people deserve more.",
-  "I won't kill you, but I don't have to save you.",
-  "You either die a hero or live long enough to see yourself become the villain.",
-  "Endure. You can be the outcast. You can be the one they all turn against.",
-  "People need dramatic examples to shake them out of apathy.",
-  "Everything's impossible until somebody does it.",
-  "I am vengeance. I am the night. I am Batman.",
-  "The world only makes sense if you force it to.",
-  "It's not about deserve. It's about what you believe.",
-  "You don't get heaven or hell. Do you know the only reward you get for being Batman? You get to be Batman.",
-  "I have one power. I never give up.",
-  "If you make yourself more than just a man, you become something else entirely.",
-  "Legends don't burn down villages.",
-  "You're much stronger than you think you are. Trust me.",
-  "A vigilante is just a man lost in the scramble for his own gratification.",
-  "I'm not going to kill you. I want you to tell all your friends about me.",
-  "All men have limits. They learn what they are and learn not to exceed them. I ignore mine.",
-  "Sometimes it's only madness that makes us what we are.",
-  "It's not who you are underneath, it's what you do that defines you.",
-  "The world doesn't make sense until you force it to.",
-  "Success is stumbling from failure to failure with no loss of enthusiasm.",
+const TRUESMM_QUOTES = [
+  "Consistency is the key to organic growth.",
+  "Small steps every day lead to big results.",
+  "Quality engagement beats quantity every time.",
+  "Growth looks like patience, strategy, and consistency.",
+  "Your content deserves to be seen.",
+  "The algorithm rewards persistence.",
+  "Organic growth is a marathon, not a sprint.",
+  "Every order is a step toward stronger presence.",
+  "Keep showing up. The results will follow.",
+  "Smart delivery beats fast delivery.",
 ];
 
-function getRandomQuote() {
-  return BATMAN_QUOTES[Math.floor(Math.random() * BATMAN_QUOTES.length)];
+function getRandomTruesmmQuote() {
+  return TRUESMM_QUOTES[Math.floor(Math.random() * TRUESMM_QUOTES.length)];
 }
 
 function readStorage<T>(key: string, fallback: T): T {
@@ -242,7 +222,7 @@ export default function App() {
   const [controllingOrderId, setControllingOrderId] = useState<string | null>(
     null
   );
-  const [batmanQuote] = useState(() => getRandomQuote());
+  const [truesmmQuote] = useState(() => getRandomTruesmmQuote());
 
   const isSyncingRef = useRef(false);
   const lastSyncTimeRef = useRef(0);
@@ -727,25 +707,25 @@ export default function App() {
   ]);
 
   return (
-    <div className="min-h-screen bg-black text-gray-100">
+    <div className="min-h-screen bg-white text-slate-900">
       <div className="flex min-h-screen">
 
         {/* ============ DESKTOP SIDEBAR ============ */}
-        <aside className="hidden lg:flex w-64 flex-col border-r border-yellow-500/20 bg-gradient-to-b from-gray-950 to-black p-6">
+        <aside className="hidden lg:flex w-64 flex-col border-r border-slate-200 bg-slate-50 p-6">
           <div className="mb-8 space-y-1">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div
-                  className="absolute inset-0 animate-ping rounded-full bg-yellow-500/20"
+                  className="absolute inset-0 animate-ping rounded-full bg-blue-100"
                   style={{ animationDuration: "3s" }}
                 />
-                <span className="relative text-3xl">🦇</span>
+                <span className="relative text-3xl">🚀</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-yellow-400">
-                  GOTHAM
+                <h1 className="text-xl font-bold tracking-tight text-blue-600">
+                  TRUESMM
                 </h1>
-                <p className="text-xs text-yellow-600">SMM Command Center</p>
+                <p className="text-xs text-slate-500">TRUESMM Panel</p>
               </div>
             </div>
           </div>
@@ -764,14 +744,14 @@ export default function App() {
                   className={cn(
                     "relative flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all",
                     isActive
-                      ? "bg-yellow-500/20 text-yellow-400 shadow-lg shadow-yellow-500/10"
-                      : "text-gray-400 hover:bg-yellow-500/10 hover:text-yellow-300"
+                      ? "bg-blue-100 text-blue-600 shadow-lg shadow-blue-500/10"
+                      : "text-slate-500 hover:bg-blue-50 hover:text-blue-700"
                   )}
                 >
                   {isActive && (
                     <motion.span
                       layoutId="active-nav"
-                      className="absolute inset-0 rounded-xl border border-yellow-500/50"
+                      className="absolute inset-0 rounded-xl border border-blue-300"
                       transition={{
                         type: "spring",
                         stiffness: 280,
@@ -790,60 +770,60 @@ export default function App() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-8 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4"
+            className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4"
           >
             <div className="mb-2 flex items-center gap-2">
-              <span className="text-yellow-400">🦇</span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-yellow-600">
-                Quote of the Visit
+              <span className="text-blue-600">🚀</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                Daily Insight
               </span>
             </div>
-            <p className="text-xs italic leading-relaxed text-yellow-500/70">
-              "{batmanQuote}"
+            <p className="text-xs italic leading-relaxed text-blue-700/80">
+              "{truesmmQuote}"
             </p>
-            <p className="mt-2 text-right text-[10px] font-medium text-yellow-600">
-              — Batman
+            <p className="mt-2 text-right text-[10px] font-medium text-slate-500">
+              — TRUESMM
             </p>
           </motion.div>
 
-          <div className="mt-4 rounded-lg border border-gray-800 bg-black/50 px-3 py-2 text-center">
-            <p className="text-[10px] text-gray-600">
+          <div className="mt-4 rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-center">
+            <p className="text-[10px] text-slate-600">
               Auto-syncs every 5 min ⚡
             </p>
           </div>
         </aside>
 
         {/* ============ MOBILE HEADER ============ */}
-        <div className="fixed top-0 left-0 right-0 z-40 flex lg:hidden items-center justify-between border-b border-yellow-500/20 bg-black/95 backdrop-blur-sm px-4 py-3">
+        <div className="fixed top-0 left-0 right-0 z-40 flex lg:hidden items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🦇</span>
+            <span className="text-2xl">🚀</span>
             <div>
-              <h1 className="text-base font-bold tracking-tight text-yellow-400">
-                GOTHAM
+              <h1 className="text-base font-bold tracking-tight text-blue-600">
+                TRUESMM
               </h1>
-              <p className="text-[10px] text-yellow-600">SMM Command Center</p>
+              <p className="text-[10px] text-slate-500">TRUESMM Panel</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setMobileNavOpen((prev) => !prev)}
-            className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-2.5"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-blue-50 p-2.5"
           >
             <span
               className={cn(
-                "block h-0.5 w-5 bg-yellow-400 transition-all",
+                "block h-0.5 w-5 bg-blue-600 transition-all",
                 mobileNavOpen && "translate-y-2 rotate-45"
               )}
             />
             <span
               className={cn(
-                "block h-0.5 w-5 bg-yellow-400 transition-all",
+                "block h-0.5 w-5 bg-blue-600 transition-all",
                 mobileNavOpen && "opacity-0"
               )}
             />
             <span
               className={cn(
-                "block h-0.5 w-5 bg-yellow-400 transition-all",
+                "block h-0.5 w-5 bg-blue-600 transition-all",
                 mobileNavOpen && "-translate-y-2 -rotate-45"
               )}
             />
@@ -858,7 +838,7 @@ export default function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-40 bg-black/70 lg:hidden"
+                className="fixed inset-0 z-40 bg-slate-100/90 lg:hidden"
                 onClick={() => setMobileNavOpen(false)}
               />
               <motion.div
@@ -866,16 +846,16 @@ export default function App() {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed top-0 left-0 z-50 h-full w-72 border-r border-yellow-500/20 bg-gradient-to-b from-gray-950 to-black p-6 lg:hidden"
+                className="fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-slate-50 p-6 lg:hidden"
               >
                 <div className="mb-8 flex items-center gap-3">
-                  <span className="text-3xl">🦇</span>
+                  <span className="text-3xl">🚀</span>
                   <div>
-                    <h1 className="text-xl font-bold tracking-tight text-yellow-400">
-                      GOTHAM
+                    <h1 className="text-xl font-bold tracking-tight text-blue-600">
+                      TRUESMM
                     </h1>
-                    <p className="text-xs text-yellow-600">
-                      SMM Command Center
+                    <p className="text-xs text-slate-500">
+                      TRUESMM Panel
                     </p>
                   </div>
                 </div>
@@ -895,8 +875,8 @@ export default function App() {
                         className={cn(
                           "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all",
                           isActive
-                            ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/50"
-                            : "text-gray-400 hover:bg-yellow-500/10 hover:text-yellow-300"
+                            ? "bg-blue-100 text-blue-600 border border-blue-300"
+                            : "text-slate-500 hover:bg-blue-50 hover:text-blue-700"
                         )}
                       >
                         <span className="text-lg">{item.icon}</span>
@@ -906,23 +886,23 @@ export default function App() {
                   })}
                 </nav>
 
-                <div className="mt-8 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+                <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div className="mb-2 flex items-center gap-2">
-                    <span className="text-yellow-400">🦇</span>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-yellow-600">
-                      Quote of the Visit
+                    <span className="text-blue-600">🚀</span>
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                      Daily Insight
                     </span>
                   </div>
-                  <p className="text-xs italic leading-relaxed text-yellow-500/70">
-                    "{batmanQuote}"
+                  <p className="text-xs italic leading-relaxed text-blue-700/80">
+                    "{truesmmQuote}"
                   </p>
-                  <p className="mt-2 text-right text-[10px] font-medium text-yellow-600">
-                    — Batman
+                  <p className="mt-2 text-right text-[10px] font-medium text-slate-500">
+                    — TRUESMM
                   </p>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-gray-800 bg-black/50 px-3 py-2 text-center">
-                  <p className="text-[10px] text-gray-600">
+                <div className="mt-4 rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-center">
+                  <p className="text-[10px] text-slate-600">
                     Auto-syncs every 5 min ⚡
                   </p>
                 </div>
@@ -932,7 +912,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* ============ BOTTOM NAV (Mobile) ============ */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden border-t border-yellow-500/20 bg-black/95 backdrop-blur-sm">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden border-t border-slate-200 bg-white/95 backdrop-blur-sm">
           {NAV_ITEMS.map((item) => {
             const isActive = activePage === item.key;
             return (
@@ -945,13 +925,13 @@ export default function App() {
                 }}
                 className={cn(
                   "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-all",
-                  isActive ? "text-yellow-400" : "text-gray-600"
+                  isActive ? "text-blue-600" : "text-slate-600"
                 )}
               >
                 <span className="text-lg">{item.icon}</span>
                 <span>{item.label}</span>
                 {isActive && (
-                  <span className="absolute bottom-0 h-0.5 w-8 rounded-full bg-yellow-400" />
+                  <span className="absolute bottom-0 h-0.5 w-8 rounded-full bg-blue-600" />
                 )}
               </button>
             );
@@ -959,7 +939,7 @@ export default function App() {
         </nav>
 
         {/* ============ MAIN CONTENT ============ */}
-        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-gray-950 via-black to-gray-950 pt-14 pb-16 lg:pt-0 lg:pb-0">
+        <main className="flex-1 overflow-y-auto bg-slate-50 pt-14 pb-16 lg:pt-0 lg:pb-0">
           {content}
         </main>
       </div>
