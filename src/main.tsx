@@ -9,7 +9,7 @@ import { Spinner } from "./components/ui.tsx";
 
 const STORAGE_KEY = "truesmm-access-key";
 
-function useHash(): string {
+function useHash(): string { 
   const [hash, setHash] = useState<string>(
     typeof window !== "undefined" ? window.location.hash : ""
   );
