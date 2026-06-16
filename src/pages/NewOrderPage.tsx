@@ -408,47 +408,45 @@ export function NewOrderPage({
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-6 sm:p-8 shadow-xl shadow-indigo-500/20"
+        className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-4 sm:p-5 shadow-lg shadow-indigo-500/20"
       >
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-          backgroundSize: "24px 24px",
+          backgroundSize: "20px 20px",
         }} />
-        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 h-48 w-48 rounded-full bg-pink-400/20 blur-3xl" />
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
 
-        <div className="relative">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-              Campaign builder
-            </span>
-            {ratiosAreCustom && (
-              <span className="inline-flex items-center rounded-full bg-amber-400/30 px-3 py-1 text-xs font-bold text-amber-50 backdrop-blur-sm">
-                Custom ratios
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                Campaign builder
               </span>
-            )}
+              {ratiosAreCustom && (
+                <span className="inline-flex items-center rounded-full bg-amber-400/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-50 backdrop-blur-sm">
+                  Custom ratios
+                </span>
+              )}
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+              Create a new mission
+            </h1>
+            <p className="mt-0.5 text-sm text-indigo-100 font-medium">
+              Configure your delivery pattern, target URL, and engagement mix.
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
-            Create a new mission
-          </h1>
-          <p className="mt-2 text-base sm:text-lg text-indigo-100 font-medium max-w-2xl">
-            Configure your delivery pattern, target URL, and engagement mix. Deploy in seconds.
-          </p>
 
           {/* Quick stats row */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-2 sm:gap-3 flex-shrink-0">
             {[
-              { label: "Total views", value: totalViews.toLocaleString(), icon: "👁️" },
-              { label: "Runs", value: estimatedRunCount.toString(), icon: "⚡" },
-              { label: "Duration", value: `${safePlan.estimatedDurationHours || 0}h`, icon: "⏱️" },
-              { label: "Pattern", value: safePlan.patternName || "—", icon: "📊" },
+              { label: "Views", value: totalViews.toLocaleString() },
+              { label: "Runs", value: estimatedRunCount.toString() },
+              { label: "Duration", value: `${safePlan.estimatedDurationHours || 0}h` },
+              { label: "Pattern", value: safePlan.patternName || "—" },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-3 sm:p-4">
-                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-100">
-                  <span>{stat.icon}</span>
-                  <span>{stat.label}</span>
-                </div>
-                <p className="mt-1 text-xl sm:text-2xl font-extrabold text-white tabular-nums truncate">
+              <div key={stat.label} className="rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-2 text-center min-w-[70px]">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-100">{stat.label}</p>
+                <p className="mt-0.5 text-sm sm:text-base font-bold text-white tabular-nums truncate">
                   {stat.value}
                 </p>
               </div>
