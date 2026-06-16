@@ -2,9 +2,17 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { BackendRunInfo, CreatedOrder } from "../types/order";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { checkProviderOrderStatus } from "../utils/api";
-import type { ProviderRunStatus } from "../utils/api";
 import { OrderCard } from "../components/OrderCard";
+import {
+  Button,
+  Card,
+  Input,
+  StatusPill,
+  Tabs,
+  EmptyState,
+  SectionHeader,
+  InfoBanner,
+} from "../components/ui";
 
 interface OrdersPageProps {
   orders: CreatedOrder[];
@@ -29,22 +37,11 @@ interface GroupedOrder {
   createdAt: string;
 }
 
-const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  running: { bg: "bg-yellow-500/15", text: "text-yellow-300", dot: "bg-yellow-400" },
-  processing: { bg: "bg-yellow-500/15", text: "text-yellow-300", dot: "bg-yellow-400" },
-  completed: { bg: "bg-emerald-500/15", text: "text-emerald-300", dot: "bg-emerald-400" },
-  scheduled: { bg: "bg-amber-500/15", text: "text-amber-300", dot: "bg-amber-400" },
-  paused: { bg: "bg-orange-500/15", text: "text-orange-300", dot: "bg-orange-400" },
-  cancelled: { bg: "bg-red-500/15", text: "text-red-300", dot: "bg-red-400" },
-  failed: { bg: "bg-red-500/15", text: "text-red-300", dot: "bg-red-400" },
-  pending: { bg: "bg-gray-500/15", text: "text-gray-300", dot: "bg-gray-400" },
-};
-
-const TABS: { key: TabType; label: string; icon: string }[] = [
-  { key: "running", label: "Active", icon: "⚡" },
-  { key: "scheduled", label: "Scheduled", icon: "⏱" },
-  { key: "completed", label: "Completed", icon: "✓" },
-  { key: "cancelled", label: "Cancelled", icon: "❌" },
+const TABS: { key: TabType; label: string; icon?: React.ReactNode }[] = [
+  { key: "running", label: "Active" },
+  { key: "scheduled", label: "Scheduled" },
+  { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
 ];
 
 function getRealStatus(order: CreatedOrder): string {
@@ -97,94 +94,81 @@ function getDeliveredStats(order: CreatedOrder) {
 
 function BackendRunTable({ runs }: { runs: BackendRunInfo[] }) {
   const labelColors: Record<string, string> = {
-    VIEWS: "text-yellow-400",
-    LIKES: "text-pink-400",
-    SHARES: "text-blue-400",
-    SAVES: "text-purple-400",
-    REPOSTS: "text-cyan-400",
-    COMMENTS: "text-green-400",
+    VIEWS: "text-indigo-700 bg-indigo-50",
+    LIKES: "text-pink-700 bg-pink-50",
+    SHARES: "text-sky-700 bg-sky-50",
+    SAVES: "text-violet-700 bg-violet-50",
+    REPOSTS: "text-cyan-700 bg-cyan-50",
+    COMMENTS: "text-emerald-700 bg-emerald-50",
   };
 
-  const statusColors: Record<string, string> = {
-    completed: "text-emerald-400",
-    failed: "text-orange-400",     // 🔥 distinct from cancelled
-    cancelled: "text-red-400",
-    processing: "text-yellow-400",
-    queued: "text-amber-400",
-    pending: "text-gray-400",
-    paused: "text-orange-300",
-  };
-
-  const statusIcons: Record<string, string> = {
-    completed: "✅",
-    failed: "⚠️",                 // 🔥 different icon — provider rejected
-    cancelled: "🚫",
-    processing: "⚡",
-    queued: "⏳",
-    pending: "🕐",
-    paused: "⏸️",
+  const statusKind: Record<string, any> = {
+    completed: "completed",
+    failed: "failed",
+    cancelled: "cancelled",
+    processing: "running",
+    queued: "warning",
+    pending: "pending",
+    paused: "paused",
   };
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-[10px]">
+      <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-gray-800 text-gray-600 uppercase tracking-wider">
-            <th className="pb-2 pr-3">Type</th>
-            <th className="pb-2 pr-3">Qty</th>
-            <th className="pb-2 pr-3">Scheduled</th>
-            <th className="pb-2 pr-3">Status</th>
-            <th className="pb-2 pr-3">SMM ID</th>
-            <th className="pb-2">Executed</th>
+          <tr className="border-b border-slate-200 text-slate-500 uppercase tracking-wider">
+            <th className="pb-2 pr-3 font-medium">Type</th>
+            <th className="pb-2 pr-3 font-medium">Qty</th>
+            <th className="pb-2 pr-3 font-medium">Scheduled</th>
+            <th className="pb-2 pr-3 font-medium">Status</th>
+            <th className="pb-2 pr-3 font-medium">SMM ID</th>
+            <th className="pb-2 font-medium">Executed</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-900">
+        <tbody className="divide-y divide-slate-100">
           {runs.map((run, index) => {
             const scheduledTime = new Date(run.time);
             const executedTime = run.executedAt ? new Date(run.executedAt) : null;
             const isCompleted = run.status === "completed";
 
             return (
-              <tr key={`${run.id}-${index}`} className="hover:bg-gray-900/50">
-                <td className="py-1.5 pr-3">
-                  <span className={`font-semibold ${labelColors[run.label] || "text-gray-400"}`}>
+              <tr key={`${run.id}-${index}`} className="hover:bg-slate-50">
+                <td className="py-2 pr-3">
+                  <span className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold ${labelColors[run.label] || "text-slate-600 bg-slate-100"}`}>
                     {run.label}
                   </span>
                 </td>
-                <td className="py-1.5 pr-3 text-gray-300 font-mono">
-                  {run.quantity.toLocaleString()}
-                </td>
-                <td className="py-1.5 pr-3 text-gray-500">
+                <td className="py-2 pr-3 text-slate-900 font-mono tabular-nums">{run.quantity.toLocaleString()}</td>
+                <td className="py-2 pr-3 text-slate-600">
                   <span title={scheduledTime.toLocaleString()}>
-                    {scheduledTime.toLocaleDateString()}{" "}
-                    {scheduledTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {scheduledTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    <span className="block text-[10px] text-slate-400">{scheduledTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                   </span>
                 </td>
-                <td className="py-1.5 pr-3">
-                  <span className={`flex items-center gap-1 ${statusColors[run.status] || "text-gray-400"}`}>
-                    <span>{statusIcons[run.status] || "❓"}</span>
-                    <span className="capitalize">{run.status}</span>
-                  </span>
+                <td className="py-2 pr-3">
+                  <StatusPill kind={statusKind[run.status] || "pending"} className="capitalize">
+                    {run.status}
+                  </StatusPill>
                   {run.error && (
-                    <span className="block text-red-400/70 text-[9px] mt-0.5 max-w-[150px] truncate" title={run.error}>
+                    <span className="block text-rose-600 text-[10px] mt-0.5 max-w-[150px] truncate" title={run.error}>
                       {run.error}
                     </span>
                   )}
                 </td>
-                <td className="py-1.5 pr-3">
+                <td className="py-2 pr-3">
                   {isCompleted && run.smmOrderId ? (
-                    <span className="font-mono text-emerald-400">#{run.smmOrderId}</span>
+                    <span className="font-mono text-emerald-600">#{run.smmOrderId}</span>
                   ) : (
-                    <span className="text-gray-700">—</span>
+                    <span className="text-slate-400">—</span>
                   )}
                 </td>
-                <td className="py-1.5">
+                <td className="py-2">
                   {executedTime ? (
-                    <span className="text-gray-500">
+                    <span className="text-slate-600 text-[11px]">
                       {executedTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   ) : (
-                    <span className="text-gray-700">—</span>
+                    <span className="text-slate-400">—</span>
                   )}
                 </td>
               </tr>
@@ -262,8 +246,8 @@ export function OrdersPage({
   }
 
   function toShortLink(link: string) {
-    if (!link) return "-";
-    return link.length > 48 ? `${link.slice(0, 30)}...${link.slice(-12)}` : link;
+    if (!link) return "—";
+    return link.length > 48 ? `${link.slice(0, 30)}…${link.slice(-12)}` : link;
   }
 
   function extractReelId(link: string) {
@@ -347,1280 +331,226 @@ export function OrdersPage({
     if (!stillExists) setOpenedGroupId(null);
   }, [groupedOrders, openedGroupId]);
 
-  function StatusBadge({ status }: { status: string }) {
-    const colors = STATUS_COLORS[status] || STATUS_COLORS.pending;
+  function ProgressBar({ percent }: { percent: number }) {
     return (
-      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-1 sm:text-xs font-medium ${colors.bg} ${colors.text}`}>
-        <span className={`h-1.5 w-1.5 rounded-full ${colors.dot} ${status === "running" ? "animate-pulse" : ""}`} />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
-  }
-
-  function ProgressBar({ percent, size = "normal" }: { percent: number; size?: "small" | "normal" }) {
-    const height = size === "small" ? "h-1" : "h-1.5";
-    const getColor = () => {
-      if (percent === 100) return "bg-emerald-500";
-      if (percent > 50) return "bg-yellow-500";
-      return "bg-yellow-600";
-    };
-    return (
-      <div className={`w-full overflow-hidden rounded-full bg-gray-800 ${height}`}>
+      <div className="w-full h-1.5 overflow-hidden rounded-full bg-slate-100">
         <div
-          className={`${height} rounded-full transition-all duration-500 ${getColor()}`}
+          className={`h-full rounded-full transition-all duration-500 ${
+            percent === 100 ? "bg-emerald-500" : percent > 50 ? "bg-indigo-500" : "bg-amber-500"
+          }`}
           style={{ width: `${percent}%` }}
         />
       </div>
     );
   }
 
-  function EmptyState({ tab }: { tab: TabType }) {
-    const messages = {
-      running: { title: "No active missions", description: "Missions in progress will appear here" },
-      completed: { title: "No completed missions", description: "Finished missions will appear here" },
-      scheduled: { title: "No scheduled missions", description: "Future missions will appear here" },
-      cancelled: { title: "No cancelled missions", description: "Cancelled & failed missions will appear here" },
-    };
-    const icons = { running: "⚡", completed: "✅", scheduled: "📅", cancelled: "🗑️" };
-    return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-yellow-500/30 bg-black py-12 sm:py-16">
-        <span className="text-4xl">{icons[tab]}</span>
-        <p className="mt-4 text-sm font-medium text-yellow-400">{messages[tab].title}</p>
-        <p className="mt-1 text-xs text-gray-600">{messages[tab].description}</p>
-      </div>
-    );
-  }
+  const stats = [
+    { label: "Active", count: categorizedGroups.running.length, kind: "running" as const },
+    { label: "Scheduled", count: categorizedGroups.scheduled.length, kind: "scheduled" as const },
+    { label: "Completed", count: categorizedGroups.completed.length, kind: "completed" as const },
+    { label: "Cancelled", count: categorizedGroups.cancelled.length, kind: "cancelled" as const },
+  ];
 
-  function StatsSummary() {
-    const stats = [
-      { label: "Active", count: categorizedGroups.running.length, color: "text-yellow-400", icon: "⚡" },
-      { label: "Scheduled", count: categorizedGroups.scheduled.length, color: "text-amber-400", icon: "⏱" },
-      { label: "Done", count: categorizedGroups.completed.length, color: "text-emerald-400", icon: "✅" },
-      { label: "Failed", count: categorizedGroups.cancelled.length, color: "text-red-400", icon: "❌" },
-    ];
-    return (
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
-        {stats.map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-yellow-500/20 bg-black px-2 py-2 text-center sm:px-4 sm:py-3">
-            <div className="flex items-center justify-center gap-1">
-              <span className="text-xs sm:text-sm">{stat.icon}</span>
-              <p className={`text-lg sm:text-2xl font-bold ${stat.color}`}>{stat.count}</p>
-            </div>
-            <p className="mt-0.5 text-[10px] sm:text-xs text-gray-600">{stat.label}</p>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  function GroupTableRow({ group }: { group: GroupedOrder }) {
-    const progress = getGroupProgress(group);
-    const status = getGroupStatus(group);
-    return (
-      <tr
-        onClick={() => setOpenedGroupId(group.id)}
-        className="cursor-pointer border-t border-gray-800 transition hover:bg-yellow-500/5"
-      >
-        <td className="px-3 py-2 sm:px-4 sm:py-3">
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-white text-xs sm:text-sm">
-              {group.name || `Mission #${group.id.slice(0, 8)}`}
-            </p>
-            {group.isBatch && (
-              <span className="hidden sm:inline rounded-full bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 text-[10px] text-blue-300">
-                📦 {group.linksCount}
-              </span>
-            )}
-          </div>
-          <p className="mt-0.5 text-[10px] text-gray-600 font-mono hidden sm:block">
-            {group.isBatch ? group.batchId?.slice(0, 15) : group.orders[0]?.id}
-          </p>
-        </td>
-        <td className="hidden sm:table-cell max-w-[180px] px-4 py-3">
-          {group.isBatch ? (
-            <p className="text-gray-500 text-xs">{group.linksCount} links</p>
-          ) : (
-            <p className="truncate text-gray-500 text-xs" title={group.orders[0]?.link}>
-              {toShortLink(group.orders[0]?.link || "")}
-            </p>
-          )}
-        </td>
-        <td className="px-3 py-2 sm:px-4 sm:py-3">
-          <StatusBadge status={status} />
-        </td>
-        <td className="hidden sm:table-cell px-4 py-3">
-          <div className="w-28">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[11px] text-gray-600">{progress.completed}/{progress.total}</span>
-              <span className="text-[11px] font-medium text-gray-500">{progress.percent}%</span>
-            </div>
-            <ProgressBar percent={progress.percent} />
-          </div>
-        </td>
-        <td className="hidden sm:table-cell px-4 py-3 text-gray-600 text-xs">
-          {new Date(group.createdAt).toLocaleDateString()}
-          <span className="block text-gray-700 text-[10px]">
-            {new Date(group.createdAt).toLocaleTimeString()}
-          </span>
-        </td>
-      </tr>
-    );
-  }
-
-  function GroupCardItem({ group }: { group: GroupedOrder }) {
-    const progress = getGroupProgress(group);
-    const status = getGroupStatus(group);
-    const isCancelled = status === "cancelled" || status === "failed";
-    return (
-      <button
-        type="button"
-        onClick={() => setOpenedGroupId(group.id)}
-        className={`group rounded-xl border bg-gradient-to-br from-gray-900 to-black p-3 sm:p-4 text-left transition-all hover:shadow-lg w-full ${
-          isCancelled
-            ? "border-red-500/20 hover:border-red-500/40"
-            : "border-yellow-500/20 hover:border-yellow-500/40"
-        }`}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <p className={`truncate text-xs sm:text-sm font-semibold ${isCancelled ? "text-red-200" : "text-white"}`}>
-                {group.name || `Mission #${group.id.slice(0, 8)}`}
-              </p>
-              {group.isBatch && (
-                <span className="rounded-full bg-blue-500/20 border border-blue-500/30 px-1.5 py-0.5 text-[9px] text-blue-300 flex-shrink-0">
-                  📦 {group.linksCount}
-                </span>
-              )}
-            </div>
-            <p className="mt-1 truncate text-[10px] text-gray-600 font-mono">
-              {group.isBatch ? `Batch: ${group.linksCount} links` : group.orders[0]?.id}
-            </p>
-          </div>
-          <StatusBadge status={status} />
-        </div>
-        {!group.isBatch && (
-          <p className="mt-2 truncate text-[10px] text-gray-500" title={group.orders[0]?.link}>
-            {toShortLink(group.orders[0]?.link || "")}
-          </p>
-        )}
-        {group.isBatch && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {group.orders.slice(0, 3).map((order) => (
-              <span
-                key={order.id}
-                className={`rounded px-1.5 py-0.5 text-[9px] ${
-                  getRealStatus(order) === "cancelled" || getRealStatus(order) === "failed"
-                    ? "bg-red-900/50 text-red-400"
-                    : "bg-gray-800 text-gray-400"
-                }`}
-              >
-                {extractReelId(order.link)}
-              </span>
-            ))}
-            {group.orders.length > 3 && (
-              <span className="rounded bg-gray-800 px-1.5 py-0.5 text-[9px] text-gray-500">
-                +{group.orders.length - 3}
-              </span>
-            )}
-          </div>
-        )}
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-[10px] mb-1">
-            <span className="text-gray-600">Progress</span>
-            <span className="text-gray-500">{progress.completed}/{progress.total} ({progress.percent}%)</span>
-          </div>
-          <ProgressBar percent={progress.percent} />
-        </div>
-        <div className="mt-2 flex items-center justify-between text-[10px] text-gray-600">
-          <span>{isCancelled ? "Cancelled" : "Deployed"}</span>
-          <span>{new Date(group.createdAt).toLocaleDateString()}</span>
-        </div>
-      </button>
-    );
-  }
-
-  function IndividualLinkCard({ order, index }: { order: CreatedOrder; index: number }) {
-    const [showRuns, setShowRuns] = useState(false);
-    const progress = getProgress(order);
-    const status = getRealStatus(order);
-    const isControlling = controllingOrderId === order.id;
-    const isCancelled = status === "cancelled" || status === "failed";
-    const hasBackendRuns = order.backendRuns && order.backendRuns.length > 0;
-    const displayRunCount = hasBackendRuns ? order.backendRuns!.length : order.runs?.length || 0;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
-        className={`rounded-xl border bg-gradient-to-br from-gray-900 to-black p-3 sm:p-4 ${
-          isCancelled ? "border-red-500/30" : "border-gray-800"
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className={`flex flex-shrink-0 items-center justify-center h-6 w-6 rounded-full text-xs font-bold ${
-                isCancelled ? "bg-red-500/20 text-red-400" : "bg-yellow-500/20 text-yellow-400"
-              }`}>
-                {index + 1}
-              </span>
-              <a
-                href={order.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`truncate text-xs sm:text-sm hover:underline ${
-                  isCancelled ? "text-red-400 hover:text-red-300" : "text-blue-400 hover:text-blue-300"
-                }`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {toShortLink(order.link)}
-              </a>
-            </div>
-            <p className="mt-1 ml-8 text-[10px] text-gray-600 font-mono hidden sm:block">{order.id}</p>
-            {order.schedulerOrderId && (
-              <p className="ml-8 text-[9px] text-gray-700 font-mono hidden sm:block">
-                Scheduler: {order.schedulerOrderId}
-              </p>
-            )}
-          </div>
-          <StatusBadge status={status} />
-        </div>
-
-        {/* Error */}
-        {order.errorMessage && (
-          <div className="mt-2 ml-8 rounded-md bg-red-500/10 border border-red-500/20 px-2 py-1">
-            <p className="text-[10px] text-red-400">❌ {order.errorMessage}</p>
-          </div>
-        )}
-
-        {/* Progress */}
-        <div className="mt-3 ml-8">
-          <div className="flex items-center justify-between text-[10px] mb-1">
-            <span className="text-gray-600">{progress.completed}/{progress.total} runs</span>
-            <span className="text-gray-500">{progress.percent}%</span>
-          </div>
-          <ProgressBar percent={progress.percent} size="small" />
-        </div>
-
-        {/* Stats */}
-        <div className="mt-3 ml-8 grid grid-cols-3 gap-1 sm:grid-cols-6 sm:gap-2">
-          {[
-            { value: `${(order.totalViews / 1000).toFixed(0)}k`, label: "Views", color: "text-yellow-400" },
-            { value: order.engagement.likes, label: "Likes", color: "text-pink-400" },
-            { value: order.engagement.shares, label: "Shares", color: "text-blue-400" },
-            { value: order.engagement.saves, label: "Saves", color: "text-purple-400" },
-            { value: order.engagement.reposts || 0, label: "Reposts", color: "text-cyan-400" },
-            { value: order.engagement.comments || 0, label: "Cmts", color: "text-green-400" },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-md bg-black/50 px-1 py-1 text-center sm:px-2">
-              <p className={`text-[10px] sm:text-xs font-medium ${stat.color}`}>{stat.value}</p>
-              <p className="text-[9px] text-gray-600">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Delivered So Far */}
-        {(() => {
-          const delivered = getDeliveredStats(order);
-          const hasDelivered =
-            delivered.views > 0 ||
-            delivered.likes > 0 ||
-            delivered.shares > 0 ||
-            delivered.saves > 0 ||
-            delivered.comments > 0 ||
-            delivered.reposts > 0;
-          const isActive = status === "running" || status === "paused";
-          if (!hasDelivered || !isActive) return null;
-          return (
-            <div className="mt-2 ml-8 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
-              <p className="text-[9px] font-medium text-emerald-500 mb-1.5 uppercase tracking-wider">
-                ✅ Delivered So Far
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {delivered.views > 0 && (
-                  <span className="text-[10px] text-emerald-400">👁️ {delivered.views.toLocaleString()} views</span>
-                )}
-                {delivered.likes > 0 && (
-                  <span className="text-[10px] text-emerald-400">❤️ {delivered.likes.toLocaleString()} likes</span>
-                )}
-                {delivered.shares > 0 && (
-                  <span className="text-[10px] text-emerald-400">🔄 {delivered.shares.toLocaleString()} shares</span>
-                )}
-                {delivered.saves > 0 && (
-                  <span className="text-[10px] text-emerald-400">💾 {delivered.saves.toLocaleString()} saves</span>
-                )}
-                {delivered.reposts > 0 && (
-                  <span className="text-[10px] text-emerald-400">🔁 {delivered.reposts.toLocaleString()} reposts</span>
-                )}
-                {delivered.comments > 0 && (
-                  <span className="text-[10px] text-emerald-400">💬 {delivered.comments.toLocaleString()} comments</span>
-                )}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Controls */}
-        <div className="mt-3 ml-8 flex flex-wrap items-center gap-1.5 sm:gap-2">
-          {!isCancelled && status === "running" && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onControlOrder(order, "pause"); }}
-              disabled={isControlling}
-              className="flex items-center gap-1 rounded-md border border-orange-500/30 bg-orange-500/10 px-2 py-1 text-[10px] font-medium text-orange-300 hover:bg-orange-500/20 transition disabled:opacity-50"
-            >
-              {isControlling ? "⏳" : "⏸️"} Pause
-            </button>
-          )}
-          {!isCancelled && status === "paused" && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onControlOrder(order, "resume"); }}
-              disabled={isControlling}
-              className="flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-300 hover:bg-emerald-500/20 transition disabled:opacity-50"
-            >
-              {isControlling ? "⏳" : "▶️"} Resume
-            </button>
-          )}
-          {!isCancelled && status !== "completed" && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (window.confirm(`Cancel this order?\n\nLink: ${order.link.slice(0, 50)}...`)) {
-                  onControlOrder(order, "cancel");
-                }
-              }}
-              disabled={isControlling}
-              className="flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] font-medium text-red-300 hover:bg-red-500/20 transition disabled:opacity-50"
-            >
-              {isControlling ? "⏳" : "❌"} Cancel
-            </button>
-          )}
-          <button
-            onClick={(e) => { e.stopPropagation(); onCloneOrder(order); }}
-            className="flex items-center gap-1 rounded-md border border-gray-600 bg-black px-2 py-1 text-[10px] font-medium text-gray-400 hover:text-white transition"
-          >
-            📋 Clone
-          </button>
-          <a
-            href={order.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 rounded-md border border-gray-600 bg-black px-2 py-1 text-[10px] font-medium text-gray-400 hover:text-white transition"
-          >
-            🔗 Open
-          </a>
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowRuns(!showRuns); }}
-            className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium transition ml-auto ${
-              showRuns
-                ? "border-yellow-500/50 bg-yellow-500/20 text-yellow-300"
-                : "border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
-            }`}
-          >
-            {showRuns ? "🔼 Hide" : `📋 Runs (${displayRunCount})`}
-          </button>
-        </div>
-
-        {/* Run List */}
-        <AnimatePresence>
-          {showRuns && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-4 ml-0 sm:ml-8 overflow-hidden"
-            >
-              <div className="rounded-lg border border-yellow-500/20 bg-black/50 p-3">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-semibold text-yellow-400">
-                    📋 Run Schedule
-                    {hasBackendRuns && (
-                      <span className="ml-2 text-[9px] text-emerald-400">✅ Live</span>
-                    )}
-                  </h4>
-                  <span className="text-[10px] text-gray-600">{progress.completed} completed</span>
-                </div>
-                {hasBackendRuns ? (
-                  <BackendRunTable runs={order.backendRuns!} />
-                ) : order.runs && order.runs.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-[10px]">
-                      <thead>
-                        <tr className="border-b border-gray-800 text-gray-600 uppercase tracking-wider">
-                          <th className="pb-2 pr-3">#</th>
-                          <th className="pb-2 pr-3">Time</th>
-                          <th className="pb-2 pr-3">Views</th>
-                          <th className="pb-2 pr-3">Likes</th>
-                          <th className="pb-2 pr-3">Shares</th>
-                          <th className="pb-2 pr-3">Saves</th>
-                          <th className="pb-2 pr-3">Reposts</th>
-                          <th className="pb-2">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-900">
-                        {order.runs.map((run, i) => {
-                          const runTime = run.at instanceof Date ? run.at : new Date(run.at);
-                          const isPast = runTime.getTime() <= Date.now();
-                          const runStatus = order.runStatuses?.[i] || "pending";
-                          return (
-                            <tr key={i} className="hover:bg-gray-900/50">
-                              <td className="py-1.5 pr-3 text-gray-500">{i + 1}</td>
-                              <td className="py-1.5 pr-3 text-gray-400">
-                                {runTime.toLocaleDateString()}{" "}
-                                {runTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              </td>
-                              <td className="py-1.5 pr-3 text-yellow-400">{(run.views || 0).toLocaleString()}</td>
-                              <td className="py-1.5 pr-3 text-pink-400">{run.likes || 0}</td>
-                              <td className="py-1.5 pr-3 text-blue-400">{run.shares || 0}</td>
-                              <td className="py-1.5 pr-3 text-purple-400">{run.saves || 0}</td>
-                              <td className="py-1.5 pr-3 text-cyan-400">{run.reposts || 0}</td>
-                              <td className="py-1.5">
-                                {runStatus === "completed" ? (
-                                  <span className="text-emerald-400">✅</span>
-                                ) : runStatus === "cancelled" ? (
-                                  <span className="text-red-400" title="Cancelled">🚫</span>
-                                ) : runStatus === "failed" ? (
-                                  <span className="text-orange-400" title="Provider rejected">⚠️</span>
-                                ) : isPast ? (
-                                  <span className="text-yellow-400">⚡</span>
-                                ) : (
-                                  <span className="text-gray-500">🕐</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-dashed border-gray-700 bg-black/30 p-4 text-center">
-                    <p className="text-xs text-gray-500">No runs scheduled for this order</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    );
-  }
-
-  function BatchDetailPopup({ group }: { group: GroupedOrder }) {
-    const overallProgress = getGroupProgress(group);
-    const overallStatus = getGroupStatus(group);
-    const isCancelled = overallStatus === "cancelled" || overallStatus === "failed";
-    const [showBatchGraph, setShowBatchGraph] = useState(false);
-
-    const statusCounts = useMemo(() => {
-      const counts: Record<string, number> = {};
-      group.orders.forEach((order) => {
-        const status = getRealStatus(order);
-        counts[status] = (counts[status] || 0) + 1;
-      });
-      return counts;
-    }, [group.orders]);
-
-    const totalRunsInBatch = useMemo(() => {
-      return group.orders.reduce(
-        (sum, order) => sum + (order.backendRuns?.length || order.runs?.length || 0),
-        0
-      );
-    }, [group.orders]);
-
-    // Build graph data from first order's runs
-    const batchGraphData = useMemo(() => {
-      const firstOrder = group.orders[0];
-      if (!firstOrder) return [];
-      const runs = firstOrder.runs || [];
-      return runs.map((run) => ({
-        time: (run.at instanceof Date ? run.at : new Date(run.at)).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        views: run.cumulativeViews || run.views || 0,
-        likes: (run.cumulativeLikes || run.likes || 0) * 10,
-        shares: (run.cumulativeShares || run.shares || 0) * 10,
-        saves: (run.cumulativeSaves || run.saves || 0) * 10,
-        reposts: (run.cumulativeReposts || run.reposts || 0) * 10,
-        comments: (run.cumulativeComments || run.comments || 0) * 10,
-      }));
-    }, [group.orders]);
-
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-sm px-0 sm:px-4 py-0 sm:py-6"
-        onClick={() => setOpenedGroupId(null)}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`max-h-[95vh] sm:max-h-[92vh] w-full sm:max-w-4xl overflow-hidden rounded-t-2xl sm:rounded-2xl border bg-black shadow-2xl flex flex-col ${
-            isCancelled ? "border-red-500/30" : "border-yellow-500/30"
-          }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="border-b border-gray-800 px-4 py-3 sm:px-5 sm:py-4 flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className={`text-base sm:text-lg font-semibold truncate ${isCancelled ? "text-red-400" : "text-yellow-400"}`}>
-                    {group.name}
-                  </h3>
-                  {group.isBatch && (
-                    <span className="rounded-full bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 text-[10px] sm:text-xs text-blue-300 flex-shrink-0">
-                      📦 Bulk
-                    </span>
-                  )}
-                  {isCancelled && (
-                    <span className="rounded-full bg-red-500/20 border border-red-500/30 px-2 py-0.5 text-[10px] text-red-300 flex-shrink-0">
-                      ❌ Cancelled
-                    </span>
-                  )}
-                </div>
-                <p className="mt-0.5 text-[10px] text-gray-600 font-mono hidden sm:block">
-                  {group.batchId || group.id}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpenedGroupId(null)}
-                className="flex-shrink-0 ml-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-1.5 text-xs text-yellow-300 transition hover:bg-yellow-500/20"
-              >
-                ✕ Close
-              </button>
-            </div>
-
-            {/* Overall Stats */}
-            <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-2">
-              {[
-                { value: group.linksCount, label: "Links", color: "text-yellow-400" },
-                { value: `${(group.totalViews / 1000).toFixed(0)}k`, label: "Views", color: "text-yellow-400" },
-                { value: totalRunsInBatch, label: "Runs", color: "text-blue-400" },
-                {
-                  value: `${overallProgress.percent}%`,
-                  label: "Progress",
-                  color: isCancelled ? "text-red-400" : "text-emerald-400",
-                },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-lg bg-gray-900 px-2 py-2 text-center sm:px-3">
-                  <p className={`text-base sm:text-xl font-bold ${stat.color}`}>{stat.value}</p>
-                  <p className="text-[9px] sm:text-[10px] text-gray-500">{stat.label}</p>
-                </div>
-              ))}
-              <div className="rounded-lg bg-gray-900 px-2 py-2 flex items-center justify-center sm:px-3">
-                <StatusBadge status={overallStatus} />
-              </div>
-            </div>
-
-            {/* Status Summary */}
-            <div className="mt-2 flex flex-wrap gap-2">
-              {Object.entries(statusCounts).map(([status, count]) => (
-                <div key={status} className="flex items-center gap-1 text-[10px]">
-                  <span className={`h-2 w-2 rounded-full ${STATUS_COLORS[status]?.dot || "bg-gray-500"}`} />
-                  <span className="text-gray-400">{count} {status}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Graph Toggle Button */}
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowBatchGraph((prev) => !prev)}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-                  showBatchGraph
-                    ? "border-yellow-500/50 bg-yellow-500/20 text-yellow-300"
-                    : "border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
-                }`}
-              >
-                📈 {showBatchGraph ? "Hide Graph" : "View Combined Graph"}
-              </button>
-            </div>
-
-            {/* Combined Batch Graph */}
-            {showBatchGraph && batchGraphData.length > 0 && (
-              <div className="mt-3 rounded-xl border border-yellow-500/20 bg-black/50 p-3">
-                <p className="text-[10px] text-gray-500 mb-2">
-                  Scheduled delivery pattern (same for all {group.linksCount} links)
-                </p>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={batchGraphData}
-                      margin={{ top: 8, right: 16, left: 0, bottom: 4 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#111" opacity={0.3} />
-                      <XAxis
-                        dataKey="time"
-                        stroke="#666"
-                        tick={{ fill: "#9ca3af", fontSize: 10 }}
-                      />
-                      <YAxis
-                        stroke="#666"
-                        tick={{ fill: "#9ca3af", fontSize: 10 }}
-                        width={40}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          background: "#000",
-                          border: "1px solid #eab308",
-                          borderRadius: "0.5rem",
-                          color: "#d1d5db",
-                          fontSize: "11px",
-                        }}
-                      />
-                      <Line type="monotone" dataKey="views" stroke="#3b82f6" strokeWidth={2} dot={false} name="Views" />
-                      <Line type="monotone" dataKey="likes" stroke="#ec4899" strokeWidth={1.5} dot={false} name="Likes" />
-                      <Line type="monotone" dataKey="shares" stroke="#22c55e" strokeWidth={1.5} dot={false} name="Shares" />
-                      <Line type="monotone" dataKey="saves" stroke="#eab308" strokeWidth={1.5} dot={false} name="Saves" />
-                      <Line type="monotone" dataKey="reposts" stroke="#06b6d4" strokeWidth={1.5} dot={false} name="Reposts" />
-                      <Line type="monotone" dataKey="comments" stroke="#a855f7" strokeWidth={1.5} dot={false} name="Comments" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {showBatchGraph && batchGraphData.length === 0 && (
-              <div className="mt-3 rounded-xl border border-dashed border-gray-700 bg-black/30 p-4 text-center">
-                <p className="text-xs text-gray-500">No run data available to build graph.</p>
-              </div>
-            )}
-
-            {/* Bulk Actions */}
-            {!isCancelled && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  onClick={() => {
-                    const runningCount = group.orders.filter((o) => getRealStatus(o) === "running").length;
-                    if (runningCount > 0 && window.confirm(`Pause ALL ${runningCount} running orders?`)) {
-                      group.orders.forEach((order) => {
-                        if (getRealStatus(order) === "running") onControlOrder(order, "pause");
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-1 rounded-lg border border-orange-500/30 bg-orange-500/10 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5 sm:text-xs font-medium text-orange-300 hover:bg-orange-500/20 transition"
-                >
-                  ⏸️ Pause All
-                </button>
-                <button
-                  onClick={() => {
-                    const pausedCount = group.orders.filter((o) => getRealStatus(o) === "paused").length;
-                    if (pausedCount > 0 && window.confirm(`Resume ALL ${pausedCount} paused orders?`)) {
-                      group.orders.forEach((order) => {
-                        if (getRealStatus(order) === "paused") onControlOrder(order, "resume");
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5 sm:text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 transition"
-                >
-                  ▶️ Resume All
-                </button>
-                <button
-                  onClick={() => {
-                    const activeCount = group.orders.filter(
-                      (o) => !["completed", "cancelled", "failed"].includes(getRealStatus(o))
-                    ).length;
-                    if (activeCount > 0 && window.confirm(`⚠️ Cancel ALL ${activeCount} active orders?`)) {
-                      group.orders.forEach((order) => {
-                        const status = getRealStatus(order);
-                        if (status !== "completed" && status !== "cancelled" && status !== "failed") {
-                          onControlOrder(order, "cancel");
-                        }
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-[10px] sm:px-3 sm:py-1.5 sm:text-xs font-medium text-red-300 hover:bg-red-500/20 transition"
-                >
-                  ❌ Cancel All
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Individual Links */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-5">
-            <h4 className="text-xs sm:text-sm font-semibold text-gray-400 mb-3">
-              📋 Individual Links ({group.orders.length}) — Click "Runs" to see run schedule
-            </h4>
-            <div className="space-y-3">
-              {group.orders.map((order, index) => (
-                <IndividualLinkCard key={order.id} order={order} index={index} />
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  function SingleOrderPopup({ order }: { order: CreatedOrder }) {
-    const [showRuns, setShowRuns] = useState(false);
-    const [showGraph, setShowGraph] = useState(false);
-    const status = getRealStatus(order);
-    const progress = getProgress(order);
-    const isControlling = controllingOrderId === order.id;
-    const isCancelled = status === "cancelled" || status === "failed";
-    const hasBackendRuns = order.backendRuns && order.backendRuns.length > 0;
-
-    // Build graph data from order runs
-    const graphData = useMemo(() => {
-      const runs = order.runs || [];
-      return runs.map((run) => ({
-        time: (run.at instanceof Date ? run.at : new Date(run.at)).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        views: run.cumulativeViews || run.views || 0,
-        likes: (run.cumulativeLikes || run.likes || 0) * 10,
-        shares: (run.cumulativeShares || run.shares || 0) * 10,
-        saves: (run.cumulativeSaves || run.saves || 0) * 10,
-        reposts: (run.cumulativeReposts || run.reposts || 0) * 10,
-        comments: (run.cumulativeComments || run.comments || 0) * 10,
-      }));
-    }, [order]);
-
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/90 backdrop-blur-sm px-0 sm:px-4 py-0 sm:py-6"
-        onClick={() => setOpenedGroupId(null)}
-      >
-        <div
-          className="max-h-[95vh] sm:max-h-[92vh] w-full sm:max-w-4xl overflow-auto rounded-t-2xl sm:rounded-2xl border border-yellow-500/30 bg-black shadow-2xl flex flex-col"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="border-b border-gray-800 px-4 py-3 sm:px-5 sm:py-4 flex-shrink-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base sm:text-lg font-semibold text-yellow-400 truncate">
-                  {order.name || "Mission Details"}
-                </h3>
-                <p className="mt-0.5 text-[10px] text-gray-600 font-mono hidden sm:block">{order.id}</p>
-                {order.schedulerOrderId && (
-                  <p className="text-[10px] text-gray-700 font-mono hidden sm:block">
-                    Backend: {order.schedulerOrderId}
-                  </p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setOpenedGroupId(null)}
-                className="flex-shrink-0 rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-1.5 text-xs text-yellow-300 transition hover:bg-yellow-500/20"
-              >
-                ✕ Close
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {[
-                { value: `${(order.totalViews / 1000).toFixed(0)}k`, label: "Views", color: "text-yellow-400" },
-                { value: `${progress.completed}/${progress.total}`, label: "Runs", color: "text-white" },
-                { value: `${progress.percent}%`, label: "Done", color: "text-emerald-400" },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-lg bg-gray-900 px-2 py-2 text-center">
-                  <p className={`text-sm sm:text-lg font-bold ${stat.color}`}>{stat.value}</p>
-                  <p className="text-[9px] sm:text-[10px] text-gray-500">{stat.label}</p>
-                </div>
-              ))}
-              <div className="rounded-lg bg-gray-900 px-2 py-2 flex items-center justify-center">
-                <StatusBadge status={status} />
-              </div>
-            </div>
-
-            {/* Engagement */}
-            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {[
-                { value: order.engagement.likes, label: "Likes", color: "text-pink-400" },
-                { value: order.engagement.shares, label: "Shares", color: "text-blue-400" },
-                { value: order.engagement.saves, label: "Saves", color: "text-purple-400" },
-                { value: order.engagement.reposts || 0, label: "Reposts", color: "text-cyan-400" },
-                { value: order.engagement.comments || 0, label: "Cmts", color: "text-green-400" },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-md bg-black/50 px-2 py-1 text-center">
-                  <p className={`text-xs font-medium ${stat.color}`}>{stat.value}</p>
-                  <p className="text-[9px] text-gray-600">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mt-3">
-              <ProgressBar percent={progress.percent} />
-            </div>
-
-            {/* Delivered So Far */}
-            {(() => {
-              const delivered = getDeliveredStats(order);
-              const hasDelivered =
-                delivered.views > 0 ||
-                delivered.likes > 0 ||
-                delivered.shares > 0 ||
-                delivered.saves > 0 ||
-                delivered.comments > 0;
-              if (!hasDelivered) return null;
-              const totalViews = (order.runs || []).reduce((s, r) => s + (r.views || 0), 0);
-              const viewsPercent = totalViews > 0 ? Math.round((delivered.views / totalViews) * 100) : 0;
-              return (
-                <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
-                  <h4 className="text-xs font-semibold text-emerald-400 mb-2">✅ Delivered So Far</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
-                    {delivered.views > 0 && (
-                      <div className="rounded-lg bg-black/50 px-2 py-1.5 text-center">
-                        <p className="text-xs font-bold text-emerald-400">{delivered.views.toLocaleString()}</p>
-                        <p className="text-[9px] text-gray-500">👁️ Views ({viewsPercent}%)</p>
-                      </div>
-                    )}
-                    {delivered.likes > 0 && (
-                      <div className="rounded-lg bg-black/50 px-2 py-1.5 text-center">
-                        <p className="text-xs font-bold text-emerald-400">{delivered.likes.toLocaleString()}</p>
-                        <p className="text-[9px] text-gray-500">❤️ Likes</p>
-                      </div>
-                    )}
-                    {delivered.shares > 0 && (
-                      <div className="rounded-lg bg-black/50 px-2 py-1.5 text-center">
-                        <p className="text-xs font-bold text-emerald-400">{delivered.shares.toLocaleString()}</p>
-                        <p className="text-[9px] text-gray-500">🔄 Shares</p>
-                      </div>
-                    )}
-                    {delivered.saves > 0 && (
-                      <div className="rounded-lg bg-black/50 px-2 py-1.5 text-center">
-                        <p className="text-xs font-bold text-emerald-400">{delivered.saves.toLocaleString()}</p>
-                        <p className="text-[9px] text-gray-500">💾 Saves</p>
-                      </div>
-                    )}
-                    {delivered.reposts > 0 && (
-                      <div className="rounded-lg bg-black/50 px-2 py-1.5 text-center">
-                        <p className="text-xs font-bold text-emerald-400">{delivered.reposts.toLocaleString()}</p>
-                        <p className="text-[9px] text-gray-500">🔁 Reposts</p>
-                      </div>
-                    )}
-                    {delivered.comments > 0 && (
-                      <div className="rounded-lg bg-black/50 px-2 py-1.5 text-center">
-                        <p className="text-xs font-bold text-emerald-400">{delivered.comments.toLocaleString()}</p>
-                        <p className="text-[9px] text-gray-500">💬 Comments</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Controls */}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {!isCancelled && status === "running" && (
-                <button
-                  onClick={() => onControlOrder(order, "pause")}
-                  disabled={isControlling}
-                  className="flex items-center gap-1 rounded-lg border border-orange-500/30 bg-orange-500/10 px-2 py-1.5 text-xs font-medium text-orange-300 hover:bg-orange-500/20 transition disabled:opacity-50"
-                >
-                  {isControlling ? "⏳" : "⏸️"} Pause
-                </button>
-              )}
-              {!isCancelled && status === "paused" && (
-                <button
-                  onClick={() => onControlOrder(order, "resume")}
-                  disabled={isControlling}
-                  className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1.5 text-xs font-medium text-emerald-300 hover:bg-emerald-500/20 transition disabled:opacity-50"
-                >
-                  {isControlling ? "⏳" : "▶️"} Resume
-                </button>
-              )}
-              {!isCancelled && status !== "completed" && (
-                <button
-                  onClick={() => {
-                    if (window.confirm("Cancel this mission?")) onControlOrder(order, "cancel");
-                  }}
-                  disabled={isControlling}
-                  className="flex items-center gap-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1.5 text-xs font-medium text-red-300 hover:bg-red-500/20 transition disabled:opacity-50"
-                >
-                  {isControlling ? "⏳" : "❌"} Cancel
-                </button>
-              )}
-              <button
-                onClick={() => onCloneOrder(order)}
-                className="flex items-center gap-1 rounded-lg border border-gray-600 bg-black px-2 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition"
-              >
-                📋 Clone
-              </button>
-              <a
-                href={order.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 rounded-lg border border-gray-600 bg-black px-2 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition"
-              >
-                🔗 Open
-              </a>
-              {graphData.length > 0 && (
-                <button
-                  onClick={() => setShowGraph(!showGraph)}
-                  className={`flex items-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
-                    showGraph
-                      ? "border-yellow-500/50 bg-yellow-500/20 text-yellow-300"
-                      : "border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
-                  }`}
-                >
-                  📈 {showGraph ? "Hide Graph" : "View Graph"}
-                </button>
-              )}
-              <button
-                onClick={() => setShowRuns(!showRuns)}
-                className={`flex items-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition ml-auto ${
-                  showRuns
-                    ? "border-yellow-500/50 bg-yellow-500/20 text-yellow-300"
-                    : "border-yellow-500/30 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
-                }`}
-              >
-                {showRuns ? "🔼 Hide Runs" : "📋 Runs"}
-              </button>
-            </div>
-          </div>
-
-          {/* Body */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4">
-
-            {/* Graph */}
-            <AnimatePresence>
-              {showGraph && graphData.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="rounded-xl border border-yellow-500/20 bg-black/50 p-3">
-                    <p className="text-[10px] text-gray-500 mb-2">📈 Delivery schedule graph</p>
-                    <div className="h-48">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={graphData}
-                          margin={{ top: 8, right: 16, left: 0, bottom: 4 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#111" opacity={0.3} />
-                          <XAxis
-                            dataKey="time"
-                            stroke="#666"
-                            tick={{ fill: "#9ca3af", fontSize: 10 }}
-                          />
-                          <YAxis
-                            stroke="#666"
-                            tick={{ fill: "#9ca3af", fontSize: 10 }}
-                            width={40}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              background: "#000",
-                              border: "1px solid #eab308",
-                              borderRadius: "0.5rem",
-                              color: "#d1d5db",
-                              fontSize: "11px",
-                            }}
-                          />
-                          <Line type="monotone" dataKey="views" stroke="#3b82f6" strokeWidth={2} dot={false} name="Views" />
-                          <Line type="monotone" dataKey="likes" stroke="#ec4899" strokeWidth={1.5} dot={false} name="Likes" />
-                          <Line type="monotone" dataKey="shares" stroke="#22c55e" strokeWidth={1.5} dot={false} name="Shares" />
-                          <Line type="monotone" dataKey="saves" stroke="#eab308" strokeWidth={1.5} dot={false} name="Saves" />
-                          <Line type="monotone" dataKey="comments" stroke="#a855f7" strokeWidth={1.5} dot={false} name="Comments" />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Run Table */}
-            <AnimatePresence>
-              {showRuns && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="rounded-lg border border-yellow-500/20 bg-black/50 p-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-xs font-semibold text-yellow-400">
-                        📋 Run Schedule
-                        {hasBackendRuns && (
-                          <span className="ml-2 text-[9px] text-emerald-400">✅ Live</span>
-                        )}
-                      </h4>
-                    </div>
-                    {hasBackendRuns ? (
-                      <BackendRunTable runs={order.backendRuns!} />
-                    ) : order.runs && order.runs.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-[10px]">
-                          <thead>
-                            <tr className="border-b border-gray-800 text-gray-600 uppercase tracking-wider">
-                              <th className="pb-2 pr-3">#</th>
-                              <th className="pb-2 pr-3">Time</th>
-                              <th className="pb-2 pr-3">Views</th>
-                              <th className="pb-2 pr-3">Likes</th>
-                              <th className="pb-2 pr-3">Shares</th>
-                              <th className="pb-2 pr-3">Saves</th>
-                              <th className="pb-2">Status</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-900">
-                            {order.runs.map((run, i) => {
-                              const runTime = run.at instanceof Date ? run.at : new Date(run.at);
-                              const isPast = runTime.getTime() <= Date.now();
-                              const runStatus = order.runStatuses?.[i] || "pending";
-                              return (
-                                <tr key={i} className="hover:bg-gray-900/50">
-                                  <td className="py-1.5 pr-3 text-gray-500">{i + 1}</td>
-                                  <td className="py-1.5 pr-3 text-gray-400">
-                                    {runTime.toLocaleDateString()}{" "}
-                                    {runTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                  </td>
-                                  <td className="py-1.5 pr-3 text-yellow-400">{(run.views || 0).toLocaleString()}</td>
-                                  <td className="py-1.5 pr-3 text-pink-400">{run.likes || 0}</td>
-                                  <td className="py-1.5 pr-3 text-blue-400">{run.shares || 0}</td>
-                                  <td className="py-1.5 pr-3 text-purple-400">{run.saves || 0}</td>
-                                  <td className="py-1.5">
-                                    {runStatus === "completed" ? (
-                                      <span className="text-emerald-400">✅</span>
-                                    ) : runStatus === "cancelled" ? (
-                                      <span className="text-red-400" title="Cancelled">🚫</span>
-                                    ) : runStatus === "failed" ? (
-                                      <span className="text-orange-400" title="Provider rejected">⚠️</span>
-                                    ) : isPast ? (
-                                      <span className="text-yellow-400">⚡</span>
-                                    ) : (
-                                      <span className="text-gray-500">🕐</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-gray-700 p-4 text-center">
-                        <p className="text-xs text-gray-500">No run data available.</p>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Metadata */}
-            <div className="grid grid-cols-2 gap-3 text-xs text-gray-500">
-              <div><span className="text-gray-600">API: </span><span>{order.selectedAPI}</span></div>
-              <div><span className="text-gray-600">Bundle: </span><span>{order.selectedBundle}</span></div>
-              <div><span className="text-gray-600">Pattern: </span><span>{order.patternName}</span></div>
-              <div>
-                <span className="text-gray-600">Created: </span>
-                <span>{new Date(order.createdAt).toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const tabCounts: Record<TabType, number> = {
+    running: categorizedGroups.running.length,
+    scheduled: categorizedGroups.scheduled.length,
+    completed: categorizedGroups.completed.length,
+    cancelled: categorizedGroups.cancelled.length,
+  };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 px-3 py-4 sm:px-6 sm:py-8">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-xl sm:text-2xl">📦</span>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-yellow-400">Mission Control</h2>
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      <SectionHeader
+        eyebrow="Management"
+        title="Orders"
+        description="Track, pause, resume, or cancel your campaigns."
+        actions={
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <span className="flex h-2 w-2 relative">
+              <span className="absolute inset-0 animate-ping rounded-full bg-indigo-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500" />
+            </span>
+            <span>Live monitoring</span>
           </div>
-          <p className="mt-1 text-xs sm:text-sm text-gray-600">Track and manage all your operations</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-gray-600">
-          <span className="inline-flex h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
-          <span>Live monitoring</span>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Stats */}
-      <StatsSummary />
+      {/* Stats summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {stats.map((stat) => (
+          <Card key={stat.label} padding="md" className="text-center">
+            <p className="text-xs uppercase tracking-wider text-slate-500 font-medium">{stat.label}</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900 tabular-nums">{stat.count}</p>
+            <div className="mt-2">
+              <StatusPill kind={stat.kind} dot={false}>
+                {stat.count > 0 ? "Active" : "None"}
+              </StatusPill>
+            </div>
+          </Card>
+        ))}
+      </div>
 
       {/* Notice */}
-      {notice && (
-        <div className="flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-emerald-300">
-          <div className="flex items-center gap-2">
-            <span>✓</span>
-            <p>{notice}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onDismissNotice}
-            className="rounded-lg px-2 py-1 text-emerald-200 hover:bg-emerald-500/20 transition"
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
           >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Status Legend */}
-      <div className="rounded-xl border border-yellow-500/15 bg-black/40 px-3 py-2 sm:px-4 sm:py-2.5">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] sm:text-xs">
-          <span className="font-semibold uppercase tracking-wider text-gray-500">
-            Run status:
-          </span>
-          <span className="flex items-center gap-1.5 text-emerald-400">
-            <span className="text-base">✅</span>
-            <span>
-              <b>Completed</b>
-              <span className="ml-1 text-gray-500">— delivered to provider</span>
-            </span>
-          </span>
-          <span className="flex items-center gap-1.5 text-yellow-400">
-            <span className="text-base">⚡</span>
-            <span>
-              <b>Processing</b>
-              <span className="ml-1 text-gray-500">— sending now</span>
-            </span>
-          </span>
-          <span className="flex items-center gap-1.5 text-gray-400">
-            <span className="text-base">🕐</span>
-            <span>
-              <b>Pending</b>
-              <span className="ml-1 text-gray-500">— waiting for scheduled time</span>
-            </span>
-          </span>
-          <span className="flex items-center gap-1.5 text-orange-400">
-            <span className="text-base">⚠️</span>
-            <span>
-              <b>Failed</b>
-              <span className="ml-1 text-gray-500">— provider rejected (see error)</span>
-            </span>
-          </span>
-          <span className="flex items-center gap-1.5 text-red-400">
-            <span className="text-base">🚫</span>
-            <span>
-              <b>Cancelled</b>
-              <span className="ml-1 text-gray-500">— stopped by you</span>
-            </span>
-          </span>
-        </div>
-      </div>
+            <InfoBanner kind="success" title={notice}>
+              <button onClick={onDismissNotice} className="text-emerald-700 font-medium hover:underline ml-1 text-xs">Dismiss</button>
+            </InfoBanner>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Tabs & Controls */}
-      <div className="rounded-xl border border-yellow-500/20 bg-gradient-to-br from-gray-900 to-black p-3 sm:p-4">
+      <Card padding="md">
         <div className="flex flex-col gap-3">
-          {/* Tabs */}
-          <div className="flex gap-1 overflow-x-auto pb-1">
-            {TABS.map((tab) => {
-              const count = categorizedGroups[tab.key].length;
-              const isActive = activeTab === tab.key;
-              const isCancelledTab = tab.key === "cancelled";
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm ${
-                    isActive
-                      ? isCancelledTab
-                        ? "bg-red-500/20 text-red-300 shadow-lg"
-                        : "bg-yellow-500/20 text-yellow-300 shadow-lg"
-                      : "text-gray-500 hover:bg-yellow-500/10 hover:text-yellow-400"
-                  }`}
-                >
-                  <span>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                  <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] ${
-                    isActive
-                      ? isCancelledTab ? "bg-red-500/30 text-red-100" : "bg-yellow-500/30 text-yellow-100"
-                      : "bg-gray-800 text-gray-500"
-                  }`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <Tabs tabs={TABS} active={activeTab} onChange={(k) => setActiveTab(k as TabType)} counts={tabCounts} />
 
-          {/* Search & View Toggle */}
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 text-sm">🔍</span>
-              <input
+              <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search missions..."
-                className="w-full rounded-lg border border-yellow-500/30 bg-black py-2 pl-9 pr-4 text-xs sm:text-sm text-gray-100 outline-none placeholder:text-gray-700 focus:border-yellow-500/50"
+                className="pl-10"
               />
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </span>
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
                   ✕
                 </button>
               )}
             </div>
-            <div className="inline-flex rounded-lg border border-yellow-500/30 bg-black p-1 flex-shrink-0">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode("rows")}
-                className={`rounded-md px-2 py-1.5 text-xs transition ${
-                  viewMode === "rows" ? "bg-yellow-500/20 text-yellow-300" : "text-gray-500 hover:text-yellow-400"
+                className={`rounded-md px-2.5 py-1.5 text-sm transition ${
+                  viewMode === "rows" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 }`}
-                title="Table View"
+                title="Table view"
               >
-                ☰
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("columns")}
-                className={`rounded-md px-2 py-1.5 text-xs transition ${
-                  viewMode === "columns" ? "bg-yellow-500/20 text-yellow-300" : "text-gray-500 hover:text-yellow-400"
+                className={`rounded-md px-2.5 py-1.5 text-sm transition ${
+                  viewMode === "columns" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 }`}
-                title="Grid View"
+                title="Grid view"
               >
-                ⊞
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Results Info */}
       {query && (
-        <p className="text-xs sm:text-sm text-gray-600">
-          Found <span className="text-gray-400 font-medium">{filteredGroups.length}</span> missions matching "
-          <span className="text-yellow-400">{query}</span>"
+        <p className="text-sm text-slate-600">
+          Found <span className="font-semibold text-slate-900">{filteredGroups.length}</span> mission{filteredGroups.length !== 1 ? "s" : ""} matching "<span className="font-medium text-indigo-600">{query}</span>"
         </p>
       )}
 
       {/* Orders Display */}
       {filteredGroups.length === 0 ? (
-        <EmptyState tab={activeTab} />
+        <EmptyState
+          icon={
+            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          }
+          title={
+            activeTab === "running" ? "No active missions" :
+            activeTab === "completed" ? "No completed missions" :
+            activeTab === "scheduled" ? "No scheduled missions" :
+            "No cancelled missions"
+          }
+          description={
+            activeTab === "running" ? "Missions in progress will appear here" :
+            activeTab === "completed" ? "Finished missions will appear here" :
+            activeTab === "scheduled" ? "Future missions will appear here" :
+            "Cancelled or failed missions will appear here"
+          }
+        />
       ) : viewMode === "rows" ? (
-        <div className="overflow-hidden rounded-xl border border-yellow-500/20 bg-black">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-gray-400">
-              <thead className="bg-gray-900 text-gray-500 uppercase tracking-wider">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-xs">
                 <tr>
-                  <th className="px-3 py-3 font-medium sm:px-4">Mission</th>
-                  <th className="hidden sm:table-cell px-4 py-3 font-medium">Link(s)</th>
-                  <th className="px-3 py-3 font-medium sm:px-4">Status</th>
-                  <th className="hidden sm:table-cell px-4 py-3 font-medium">Progress</th>
-                  <th className="hidden sm:table-cell px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 font-semibold">Mission</th>
+                  <th className="hidden sm:table-cell px-4 py-3 font-semibold">Link</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="hidden md:table-cell px-4 py-3 font-semibold w-48">Progress</th>
+                  <th className="hidden sm:table-cell px-4 py-3 font-semibold">Date</th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredGroups.map((group) => (
-                  <GroupTableRow key={group.id} group={group} />
-                ))}
+              <tbody className="divide-y divide-slate-100">
+                {filteredGroups.map((group) => {
+                  const progress = getGroupProgress(group);
+                  const status = getGroupStatus(group);
+                  return (
+                    <tr
+                      key={group.id}
+                      onClick={() => setOpenedGroupId(group.id)}
+                      className="cursor-pointer hover:bg-slate-50 transition"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-slate-900">
+                            {group.name || `Mission #${group.id.slice(0, 8)}`}
+                          </p>
+                          {group.isBatch && (
+                            <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
+                              Batch · {group.linksCount}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-3 max-w-[200px]">
+                        {group.isBatch ? (
+                          <p className="text-slate-500 text-xs">{group.linksCount} links</p>
+                        ) : (
+                          <p className="truncate text-slate-600 text-xs font-mono" title={group.orders[0]?.link}>
+                            {toShortLink(group.orders[0]?.link || "")}
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusPill kind={status as any} className="capitalize">{status}</StatusPill>
+                      </td>
+                      <td className="hidden md:table-cell px-4 py-3">
+                        <div className="flex items-center justify-between mb-1 text-xs">
+                          <span className="text-slate-500 tabular-nums">{progress.completed}/{progress.total}</span>
+                          <span className="text-slate-700 font-semibold tabular-nums">{progress.percent}%</span>
+                        </div>
+                        <ProgressBar percent={progress.percent} />
+                      </td>
+                      <td className="hidden sm:table-cell px-4 py-3 text-slate-600 text-xs">
+                        {new Date(group.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        <span className="block text-slate-400 text-[10px]">{new Date(group.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1628,20 +558,391 @@ export function OrdersPage({
       ) : (
         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredGroups.map((group) => (
-            <GroupCardItem key={group.id} group={group} />
+            <OrderCard
+              key={group.id}
+              order={group.orders[0]}
+              onControl={onControlOrder}
+              onClone={onCloneOrder}
+              controlBusy={controllingOrderId === group.orders[0].id}
+            />
           ))}
         </div>
       )}
 
       {/* Detail Popup */}
       <AnimatePresence>
-        {openedGroup &&
-          (openedGroup.isBatch ? (
-            <BatchDetailPopup group={openedGroup} />
+        {openedGroup && (
+          openedGroup.isBatch ? (
+            <BatchDetailPopup
+              group={openedGroup}
+              controllingOrderId={controllingOrderId}
+              onClose={() => setOpenedGroupId(null)}
+              onControl={onControlOrder}
+              onClone={onCloneOrder}
+            />
           ) : (
-            <SingleOrderPopup order={openedGroup.orders[0]} />
-          ))}
+            <OrderDetailPopup
+              order={openedGroup.orders[0]}
+              controllingOrderId={controllingOrderId}
+              onClose={() => setOpenedGroupId(null)}
+              onControl={onControlOrder}
+              onClone={onCloneOrder}
+            />
+          )
+        )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// ============ ORDER DETAIL POPUP ============
+
+function OrderDetailPopup({
+  order,
+  controllingOrderId,
+  onClose,
+  onControl,
+  onClone,
+}: {
+  order: CreatedOrder;
+  controllingOrderId: string | null;
+  onClose: () => void;
+  onControl: (order: CreatedOrder, action: "pause" | "resume" | "cancel") => void;
+  onClone: (order: CreatedOrder) => void;
+}) {
+  const status = getRealStatus(order);
+  const progress = (() => {
+    const safeRuns = order.runs || [];
+    const totalRuns = safeRuns.length;
+    if (totalRuns === 0) return { percent: 0, completed: 0, total: 0 };
+    const statusCompleted = (order.runStatuses || []).filter((s) => s === "completed").length;
+    const completed = Math.min(totalRuns, Math.max(order.completedRuns || 0, statusCompleted));
+    return {
+      percent: Math.round((completed / totalRuns) * 100),
+      completed,
+      total: totalRuns,
+    };
+  })();
+
+  const isControlling = controllingOrderId === order.id;
+  const isCancelled = status === "cancelled" || status === "failed";
+  const hasBackendRuns = order.backendRuns && order.backendRuns.length > 0;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-backdrop p-0 sm:p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        className="w-full sm:max-w-3xl max-h-[95vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-5 border-b border-slate-200">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-semibold text-slate-900 truncate">
+                {order.name || "Mission Details"}
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500 font-mono">{order.id}</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-4 gap-3">
+            <div className="rounded-lg bg-slate-50 p-3 text-center">
+              <p className="text-2xl font-bold text-slate-900 tabular-nums">{(order.totalViews / 1000).toFixed(0)}k</p>
+              <p className="text-xs text-slate-500 mt-1">Views</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3 text-center">
+              <p className="text-2xl font-bold text-slate-900 tabular-nums">{progress.completed}/{progress.total}</p>
+              <p className="text-xs text-slate-500 mt-1">Runs</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3 text-center">
+              <p className="text-2xl font-bold text-emerald-600 tabular-nums">{progress.percent}%</p>
+              <p className="text-xs text-slate-500 mt-1">Done</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3 flex items-center justify-center">
+              <StatusPill kind={status as any} className="capitalize">{status}</StatusPill>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <div className="w-full h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  progress.percent === 100 ? "bg-emerald-500" : progress.percent > 50 ? "bg-indigo-500" : "bg-amber-500"
+                }`}
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {!isCancelled && status === "running" && (
+              <Button size="sm" variant="secondary" disabled={isControlling} onClick={() => onControl(order, "pause")}>
+                {isControlling ? "..." : "Pause"}
+              </Button>
+            )}
+            {!isCancelled && status === "paused" && (
+              <Button size="sm" variant="success" disabled={isControlling} onClick={() => onControl(order, "resume")}>
+                {isControlling ? "..." : "Resume"}
+              </Button>
+            )}
+            {!isCancelled && status !== "completed" && (
+              <Button size="sm" variant="danger" disabled={isControlling} onClick={() => {
+                if (window.confirm("Cancel this mission?")) onControl(order, "cancel");
+              }}>
+                {isControlling ? "..." : "Cancel"}
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => onClone(order)}>Clone</Button>
+            <a href={order.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+              Open link
+            </a>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Run table */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-slate-900">
+                Run schedule
+                {hasBackendRuns && (
+                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    Live
+                  </span>
+                )}
+              </h4>
+              <span className="text-xs text-slate-500 tabular-nums">{progress.completed} completed</span>
+            </div>
+            {hasBackendRuns ? (
+              <BackendRunTable runs={order.backendRuns!} />
+            ) : order.runs && order.runs.length > 0 ? (
+              <div className="rounded-lg border border-slate-200 overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">#</th>
+                      <th className="px-3 py-2 font-medium">Time</th>
+                      <th className="px-3 py-2 font-medium">Views</th>
+                      <th className="px-3 py-2 font-medium">Likes</th>
+                      <th className="px-3 py-2 font-medium">Shares</th>
+                      <th className="px-3 py-2 font-medium">Saves</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {order.runs.map((run, i) => {
+                      const runTime = run.at instanceof Date ? run.at : new Date(run.at);
+                      const isPast = runTime.getTime() <= Date.now();
+                      const runStatus = order.runStatuses?.[i] || "pending";
+                      return (
+                        <tr key={i} className="hover:bg-slate-50">
+                          <td className="px-3 py-2 text-slate-500 tabular-nums">{i + 1}</td>
+                          <td className="px-3 py-2 text-slate-700">
+                            {runTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                            <span className="block text-[10px] text-slate-400">{runTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                          </td>
+                          <td className="px-3 py-2 text-slate-900 font-semibold tabular-nums">{(run.views || 0).toLocaleString()}</td>
+                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run.likes || 0}</td>
+                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run.shares || 0}</td>
+                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run.saves || 0}</td>
+                          <td className="px-3 py-2">
+                            <StatusPill kind={runStatus as any} className="capitalize">{runStatus}</StatusPill>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center">
+                <p className="text-sm text-slate-500">No run data available.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Metadata */}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs text-slate-500 mb-1">API</p>
+              <p className="font-medium text-slate-900">{order.selectedAPI || "—"}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs text-slate-500 mb-1">Bundle</p>
+              <p className="font-medium text-slate-900">{order.selectedBundle || "—"}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs text-slate-500 mb-1">Pattern</p>
+              <p className="font-medium text-slate-900">{order.patternName || "—"}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs text-slate-500 mb-1">Created</p>
+              <p className="font-medium text-slate-900">{new Date(order.createdAt).toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ============ BATCH DETAIL POPUP ============
+
+function BatchDetailPopup({
+  group,
+  controllingOrderId,
+  onClose,
+  onControl,
+  onClone,
+}: {
+  group: GroupedOrder;
+  controllingOrderId: string | null;
+  onClose: () => void;
+  onControl: (order: CreatedOrder, action: "pause" | "resume" | "cancel") => void;
+  onClone: (order: CreatedOrder) => void;
+}) {
+  const overallProgress = (() => {
+    let completedCount = 0;
+    let totalCount = 0;
+    group.orders.forEach((order) => {
+      const safeRuns = order.runs || [];
+      const statusCompleted = (order.runStatuses || []).filter((s) => s === "completed").length;
+      completedCount += Math.min(safeRuns.length, Math.max(order.completedRuns || 0, statusCompleted));
+      totalCount += safeRuns.length;
+    });
+    return {
+      percent: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
+      completed: completedCount,
+      total: totalCount,
+    };
+  })();
+
+  const overallStatus = (() => {
+    const statuses = group.orders.map((o) => getRealStatus(o));
+    if (statuses.every((s) => s === "cancelled" || s === "failed")) return "cancelled";
+    if (statuses.every((s) => s === "completed")) return "completed";
+    if (statuses.every((s) => s === "scheduled")) return "scheduled";
+    if (statuses.some((s) => s === "failed")) return "failed";
+    if (statuses.some((s) => s === "paused")) return "paused";
+    if (statuses.some((s) => s === "running")) return "running";
+    return "running";
+  })();
+
+  const isCancelled = overallStatus === "cancelled" || overallStatus === "failed";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-backdrop p-0 sm:p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 40, opacity: 0 }}
+        className="w-full sm:max-w-4xl max-h-[95vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl border border-slate-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-5 border-b border-slate-200">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-semibold text-slate-900 truncate">{group.name}</h3>
+                <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-700">
+                  Batch · {group.linksCount} links
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-500 font-mono">{group.batchId || group.id}</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-lg bg-slate-50 p-3 text-center">
+              <p className="text-2xl font-bold text-slate-900 tabular-nums">{group.linksCount}</p>
+              <p className="text-xs text-slate-500 mt-1">Links</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3 text-center">
+              <p className="text-2xl font-bold text-slate-900 tabular-nums">{(group.totalViews / 1000).toFixed(0)}k</p>
+              <p className="text-xs text-slate-500 mt-1">Views</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3 text-center">
+              <p className="text-2xl font-bold text-slate-900 tabular-nums">{overallProgress.completed}/{overallProgress.total}</p>
+              <p className="text-xs text-slate-500 mt-1">Runs</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3 flex flex-col items-center justify-center">
+              <StatusPill kind={overallStatus as any} className="capitalize">{overallStatus}</StatusPill>
+            </div>
+          </div>
+
+          {!isCancelled && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" onClick={() => {
+                const runningCount = group.orders.filter((o) => getRealStatus(o) === "running").length;
+                if (runningCount > 0 && window.confirm(`Pause ALL ${runningCount} running orders?`)) {
+                  group.orders.forEach((order) => {
+                    if (getRealStatus(order) === "running") onControl(order, "pause");
+                  });
+                }
+              }}>
+                Pause all
+              </Button>
+              <Button size="sm" variant="success" onClick={() => {
+                const pausedCount = group.orders.filter((o) => getRealStatus(o) === "paused").length;
+                if (pausedCount > 0 && window.confirm(`Resume ALL ${pausedCount} paused orders?`)) {
+                  group.orders.forEach((order) => {
+                    if (getRealStatus(order) === "paused") onControl(order, "resume");
+                  });
+                }
+              }}>
+                Resume all
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => {
+                const activeCount = group.orders.filter(
+                  (o) => !["completed", "cancelled", "failed"].includes(getRealStatus(o))
+                ).length;
+                if (activeCount > 0 && window.confirm(`Cancel ALL ${activeCount} active orders?`)) {
+                  group.orders.forEach((order) => {
+                    const status = getRealStatus(order);
+                    if (status !== "completed" && status !== "cancelled" && status !== "failed") {
+                      onControl(order, "cancel");
+                    }
+                  });
+                }
+              }}>
+                Cancel all
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-5">
+          <h4 className="text-sm font-semibold text-slate-900 mb-3">Individual links ({group.orders.length})</h4>
+          <div className="space-y-3">
+            {group.orders.map((order, index) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onControl={onControl}
+                onClone={onClone}
+                controlBusy={controllingOrderId === order.id}
+              />
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
