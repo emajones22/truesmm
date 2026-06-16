@@ -17,6 +17,7 @@ import type {
 import { DEFAULT_ENGAGEMENT_RATIOS } from "./types/order";
 import { fetchServices, updateOrderControl, fetchOrderStatus } from "./utils/api";
 import { cn } from "./utils/cn";
+import { Button } from "./components/ui";
 
 type NavKey =
   | "dashboard"
@@ -26,31 +27,14 @@ type NavKey =
   | "bundles"
   | "ratios";
 
-const NAV_ITEMS: { key: NavKey; label: string; icon: string }[] = [
-  { key: "dashboard", label: "Dashboard", icon: "📊" },
-  { key: "new-order", label: "New Order", icon: "⚡" },
-  { key: "orders", label: "Orders", icon: "📦" },
-  { key: "apis", label: "APIs", icon: "🔗" },
-  { key: "bundles", label: "Bundles", icon: "📁" },
-  { key: "ratios", label: "Ratios", icon: "⚖️" },
+const NAV_ITEMS: { key: NavKey; label: string; description: string }[] = [
+  { key: "dashboard", label: "Dashboard", description: "Overview & analytics" },
+  { key: "new-order", label: "New Order", description: "Create a campaign" },
+  { key: "orders", label: "Orders", description: "Manage active orders" },
+  { key: "apis", label: "APIs", description: "API connections" },
+  { key: "bundles", label: "Bundles", description: "Service bundles" },
+  { key: "ratios", label: "Ratios", description: "Engagement presets" },
 ];
-
-const TRUESMM_QUOTES = [
-  "Consistency is the key to organic growth.",
-  "Small steps every day lead to big results.",
-  "Quality engagement beats quantity every time.",
-  "Growth looks like patience, strategy, and consistency.",
-  "Your content deserves to be seen.",
-  "The algorithm rewards persistence.",
-  "Organic growth is a marathon, not a sprint.",
-  "Every order is a step toward stronger presence.",
-  "Keep showing up. The results will follow.",
-  "Smart delivery beats fast delivery.",
-];
-
-function getRandomTruesmmQuote() {
-  return TRUESMM_QUOTES[Math.floor(Math.random() * TRUESMM_QUOTES.length)];
-}
 
 function readStorage<T>(key: string, fallback: T): T {
   try {
@@ -144,7 +128,6 @@ function hydrateOrderDates(orders: CreatedOrder[]): CreatedOrder[] {
       runOriginalTimes: order?.runOriginalTimes || [],
       runCurrentTimes: order?.runCurrentTimes || [],
       runReasons: order?.runReasons || [],
-      // 🔥 FIXED: Hydrate runActualExecutedTimes
       runActualExecutedTimes: Array.isArray(order?.runActualExecutedTimes)
         ? order.runActualExecutedTimes
         : safeRuns.map(() => null),
@@ -222,7 +205,6 @@ export default function App() {
   const [controllingOrderId, setControllingOrderId] = useState<string | null>(
     null
   );
-  const [truesmmQuote] = useState(() => getRandomTruesmmQuote());
 
   const isSyncingRef = useRef(false);
   const lastSyncTimeRef = useRef(0);
@@ -310,7 +292,6 @@ export default function App() {
                 case "cancelled":
                   return "cancelled";
                 case "failed":
-                  // 🔥 distinct from cancelled — provider rejected the run
                   return "failed";
                 default:
                   return "pending";
@@ -432,7 +413,6 @@ export default function App() {
           orders={orders}
           notice={ordersNotice}
           controllingOrderId={controllingOrderId}
-          // 🔥 FIXED: Now passing apis and bundles to OrdersPage
           apis={apis}
           bundles={bundles}
           onCloneOrder={(order) => {
@@ -706,31 +686,29 @@ export default function App() {
     persistRatioPresets,
   ]);
 
-  return (
-    <div className="min-h-screen bg-white text-slate-900">
-      <div className="flex min-h-screen">
+  const currentItem = NAV_ITEMS.find((item) => item.key === activePage)!;
+  const activeIndex = NAV_ITEMS.findIndex((item) => item.key === activePage);
 
-        {/* ============ DESKTOP SIDEBAR ============ */}
-        <aside className="hidden lg:flex w-64 flex-col border-r border-slate-200 bg-slate-50 p-6">
-          <div className="mb-8 space-y-1">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div
-                  className="absolute inset-0 animate-ping rounded-full bg-blue-100"
-                  style={{ animationDuration: "3s" }}
-                />
-                <span className="relative text-3xl">🚀</span>
-              </div>
-              <div>
-                <h1 className="text-xl font-bold tracking-tight text-blue-600">
-                  TRUESMM
-                </h1>
-                <p className="text-xs text-slate-500">TRUESMM Panel</p>
-              </div>
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="flex min-h-screen">
+        {/* =============== DESKTOP SIDEBAR =============== */}
+        <aside className="hidden lg:flex w-64 flex-col border-r border-slate-200 bg-white">
+          {/* Brand */}
+          <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-200">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 shadow-sm">
+              <svg viewBox="0 0 100 100" className="h-5 w-5 text-white" fill="currentColor">
+                <path d="M50 22 L58 42 L78 46 L64 60 L68 80 L50 70 L32 80 L36 60 L22 46 L42 42 Z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-base font-bold tracking-tight text-slate-900">TRUESMM</h1>
+              <p className="text-[11px] text-slate-500">Marketing Panel</p>
             </div>
           </div>
 
-          <nav className="space-y-2">
+          {/* Nav */}
+          <nav className="flex-1 space-y-1 px-3 py-4">
             {NAV_ITEMS.map((item) => {
               const isActive = activePage === item.key;
               return (
@@ -742,95 +720,88 @@ export default function App() {
                     navigateToPage(item.key);
                   }}
                   className={cn(
-                    "relative flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all",
+                    "relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition",
                     isActive
-                      ? "bg-blue-100 text-blue-600 shadow-lg shadow-blue-500/10"
-                      : "text-slate-500 hover:bg-blue-50 hover:text-blue-700"
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   )}
                 >
                   {isActive && (
                     <motion.span
                       layoutId="active-nav"
-                      className="absolute inset-0 rounded-xl border border-blue-300"
-                      transition={{
-                        type: "spring",
-                        stiffness: 280,
-                        damping: 28,
-                      }}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-indigo-600"
+                      transition={{ type: "spring", stiffness: 280, damping: 28 }}
                     />
                   )}
-                  <span className="relative text-lg">{item.icon}</span>
                   <span className="relative">{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4"
-          >
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-blue-600">🚀</span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
-                Daily Insight
-              </span>
+          {/* Footer info */}
+          <div className="border-t border-slate-200 p-3 space-y-2">
+            <div className="rounded-lg bg-slate-50 px-3 py-2">
+              <p className="text-[11px] font-medium text-slate-600">Auto-sync</p>
+              <p className="text-[11px] text-slate-500">Every 5 minutes</p>
             </div>
-            <p className="text-xs italic leading-relaxed text-blue-700/80">
-              "{truesmmQuote}"
-            </p>
-            <p className="mt-2 text-right text-[10px] font-medium text-slate-500">
-              — TRUESMM
-            </p>
-          </motion.div>
-
-          <div className="mt-4 rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-center">
-            <p className="text-[10px] text-slate-600">
-              Auto-syncs every 5 min ⚡
-            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              fullWidth
+              onClick={() => {
+                if (window.confirm("Sign out of TRUESMM?")) {
+                  localStorage.removeItem("truesmm-access-key");
+                  window.location.reload();
+                }
+              }}
+            >
+              Sign out
+            </Button>
           </div>
         </aside>
 
-        {/* ============ MOBILE HEADER ============ */}
-        <div className="fixed top-0 left-0 right-0 z-40 flex lg:hidden items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3">
+        {/* =============== MOBILE HEADER =============== */}
+        <div className="fixed top-0 left-0 right-0 z-40 flex lg:hidden items-center justify-between border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 safe-top">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">🚀</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600">
+              <svg viewBox="0 0 100 100" className="h-4 w-4 text-white" fill="currentColor">
+                <path d="M50 22 L58 42 L78 46 L64 60 L68 80 L50 70 L32 80 L36 60 L22 46 L42 42 Z" />
+              </svg>
+            </div>
             <div>
-              <h1 className="text-base font-bold tracking-tight text-blue-600">
-                TRUESMM
-              </h1>
-              <p className="text-[10px] text-slate-500">TRUESMM Panel</p>
+              <h1 className="text-sm font-bold tracking-tight text-slate-900">TRUESMM</h1>
+              <p className="text-[10px] text-slate-500">{currentItem.label}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setMobileNavOpen((prev) => !prev)}
-            className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-blue-50 p-2.5"
+            className="flex flex-col items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white p-2"
+            aria-label="Toggle menu"
           >
             <span
               className={cn(
-                "block h-0.5 w-5 bg-blue-600 transition-all",
-                mobileNavOpen && "translate-y-2 rotate-45"
+                "block h-0.5 w-4 bg-slate-700 transition-all",
+                mobileNavOpen && "translate-y-1.5 rotate-45"
               )}
             />
             <span
               className={cn(
-                "block h-0.5 w-5 bg-blue-600 transition-all",
+                "block h-0.5 w-4 bg-slate-700 transition-all",
                 mobileNavOpen && "opacity-0"
               )}
             />
             <span
               className={cn(
-                "block h-0.5 w-5 bg-blue-600 transition-all",
-                mobileNavOpen && "-translate-y-2 -rotate-45"
+                "block h-0.5 w-4 bg-slate-700 transition-all",
+                mobileNavOpen && "-translate-y-1.5 -rotate-45"
               )}
             />
           </button>
         </div>
 
-        {/* ============ MOBILE DRAWER ============ */}
+        {/* =============== MOBILE DRAWER =============== */}
         <AnimatePresence>
           {mobileNavOpen && (
             <>
@@ -838,7 +809,7 @@ export default function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-40 bg-slate-100/90 lg:hidden"
+                className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden modal-backdrop"
                 onClick={() => setMobileNavOpen(false)}
               />
               <motion.div
@@ -846,21 +817,21 @@ export default function App() {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-slate-50 p-6 lg:hidden"
+                className="fixed top-0 left-0 z-50 h-full w-72 border-r border-slate-200 bg-white p-4 lg:hidden safe-top safe-bottom"
               >
-                <div className="mb-8 flex items-center gap-3">
-                  <span className="text-3xl">🚀</span>
+                <div className="mb-6 flex items-center gap-3 px-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600">
+                    <svg viewBox="0 0 100 100" className="h-5 w-5 text-white" fill="currentColor">
+                      <path d="M50 22 L58 42 L78 46 L64 60 L68 80 L50 70 L32 80 L36 60 L22 46 L42 42 Z" />
+                    </svg>
+                  </div>
                   <div>
-                    <h1 className="text-xl font-bold tracking-tight text-blue-600">
-                      TRUESMM
-                    </h1>
-                    <p className="text-xs text-slate-500">
-                      TRUESMM Panel
-                    </p>
+                    <h1 className="text-base font-bold tracking-tight text-slate-900">TRUESMM</h1>
+                    <p className="text-[11px] text-slate-500">Marketing Panel</p>
                   </div>
                 </div>
 
-                <nav className="space-y-2">
+                <nav className="space-y-1">
                   {NAV_ITEMS.map((item) => {
                     const isActive = activePage === item.key;
                     return (
@@ -868,52 +839,32 @@ export default function App() {
                         key={item.key}
                         type="button"
                         onClick={() => {
-                          if (item.key === "new-order")
-                            setCloneSourceOrder(null);
+                          if (item.key === "new-order") setCloneSourceOrder(null);
                           navigateToPage(item.key);
                         }}
                         className={cn(
-                          "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all",
+                          "flex w-full flex-col items-start gap-0.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition",
                           isActive
-                            ? "bg-blue-100 text-blue-600 border border-blue-300"
-                            : "text-slate-500 hover:bg-blue-50 hover:text-blue-700"
+                            ? "bg-indigo-50 text-indigo-700"
+                            : "text-slate-700 hover:bg-slate-50"
                         )}
                       >
-                        <span className="text-lg">{item.icon}</span>
-                        <span>{item.label}</span>
+                        <span className="font-semibold">{item.label}</span>
+                        <span className={cn("text-[11px] font-normal", isActive ? "text-indigo-500" : "text-slate-500")}>
+                          {item.description}
+                        </span>
                       </button>
                     );
                   })}
                 </nav>
-
-                <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="text-blue-600">🚀</span>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
-                      Daily Insight
-                    </span>
-                  </div>
-                  <p className="text-xs italic leading-relaxed text-blue-700/80">
-                    "{truesmmQuote}"
-                  </p>
-                  <p className="mt-2 text-right text-[10px] font-medium text-slate-500">
-                    — TRUESMM
-                  </p>
-                </div>
-
-                <div className="mt-4 rounded-lg border border-slate-200 bg-white/90 px-3 py-2 text-center">
-                  <p className="text-[10px] text-slate-600">
-                    Auto-syncs every 5 min ⚡
-                  </p>
-                </div>
               </motion.div>
             </>
           )}
         </AnimatePresence>
 
-        {/* ============ BOTTOM NAV (Mobile) ============ */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden border-t border-slate-200 bg-white/95 backdrop-blur-sm">
-          {NAV_ITEMS.map((item) => {
+        {/* =============== BOTTOM NAV (Mobile) =============== */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 flex lg:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md safe-bottom">
+          {NAV_ITEMS.slice(0, 5).map((item) => {
             const isActive = activePage === item.key;
             return (
               <button
@@ -924,23 +875,34 @@ export default function App() {
                   navigateToPage(item.key);
                 }}
                 className={cn(
-                  "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-all",
-                  isActive ? "text-blue-600" : "text-slate-600"
+                  "relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition",
+                  isActive ? "text-indigo-600" : "text-slate-500"
                 )}
               >
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.label}</span>
+                <span className="text-[13px] font-semibold">{item.label.split(" ")[0]}</span>
+                <span className="text-[10px] opacity-80">{item.label.split(" ").slice(1).join(" ") || "Home"}</span>
                 {isActive && (
-                  <span className="absolute bottom-0 h-0.5 w-8 rounded-full bg-blue-600" />
+                  <span className="absolute top-0 h-0.5 w-8 rounded-full bg-indigo-600" />
                 )}
               </button>
             );
           })}
         </nav>
 
-        {/* ============ MAIN CONTENT ============ */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 pt-14 pb-16 lg:pt-0 lg:pb-0">
-          {content}
+        {/* =============== MAIN CONTENT =============== */}
+        <main className="flex-1 overflow-y-auto pt-14 pb-20 lg:pt-0 lg:pb-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activePage}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+              className="min-h-full"
+            >
+              {content}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
