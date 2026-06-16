@@ -17,7 +17,6 @@ import { createPatternPlan } from "../utils/patterns";
 import {
   Button,
   Card,
-  Toggle,
   StatusPill,
   InfoBanner,
 } from "../components/ui";
@@ -60,13 +59,13 @@ function SectionTitle({
   };
   const a = accents[accent];
   return (
-    <div className="flex items-center gap-4 mb-5">
-      <div className={`flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-xl ${a.bg} text-white text-lg sm:text-xl font-extrabold shadow-md`}>
+    <div className="flex items-center gap-3 mb-4">
+      <div className={`flex h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-lg ${a.bg} text-white text-base sm:text-lg font-extrabold shadow-md`}>
         {step}
       </div>
       <div>
-        <h3 className={`text-xl sm:text-2xl font-bold tracking-tight ${a.text}`}>{title}</h3>
-        <p className="text-sm sm:text-base text-slate-600 font-medium mt-0.5">{description}</p>
+        <h3 className={`text-lg sm:text-xl font-bold tracking-tight ${a.text}`}>{title}</h3>
+        <p className="text-xs sm:text-sm text-slate-600 font-medium leading-tight">{description}</p>
       </div>
     </div>
   );
@@ -364,50 +363,49 @@ export function NewOrderPage({
   }, [selectedBundleId, selectedApiId, bundles, apis, safePlan.runs, includeLikes, includeShares, includeSaves, includeReposts, includeComments]);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-      {/* ============ HERO HEADER ============ */}
+    <div className="mx-auto max-w-[1600px] space-y-4 px-3 py-4 sm:px-5 sm:py-6">
+      {/* ============ HERO HEADER (compact) ============ */}
       <motion.div
-        initial={{ opacity: 0, y: -8 }}
+        initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-4 sm:p-5 shadow-lg shadow-indigo-500/20"
+        transition={{ duration: 0.3 }}
+        className="relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 p-3 sm:p-4 shadow-lg shadow-indigo-500/20"
       >
-        <div className="absolute inset-0 opacity-20" style={{
+        <div className="absolute inset-0 opacity-15" style={{
           backgroundImage: "radial-gradient(circle at 2px 2px, white 1px, transparent 0)",
-          backgroundSize: "20px 20px",
+          backgroundSize: "18px 18px",
         }} />
-        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
 
-        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="inline-flex items-center rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
-                Campaign builder
-              </span>
-              {ratiosAreCustom && (
-                <span className="inline-flex items-center rounded-full bg-amber-400/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-50 backdrop-blur-sm">
-                  Custom ratios
-                </span>
-              )}
+        <div className="relative flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">🚀</span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base sm:text-lg font-bold tracking-tight text-white">
+                  New mission
+                </h1>
+                {ratiosAreCustom && (
+                  <span className="inline-flex items-center rounded-full bg-amber-400/30 px-2 py-0.5 text-[9px] font-bold text-amber-50 backdrop-blur-sm">
+                    Custom ratios
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-indigo-100 font-medium">
+                Configure everything below, then deploy
+              </p>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Create a new mission
-            </h1>
-            <p className="mt-0.5 text-sm text-indigo-100 font-medium">
-              Configure your delivery pattern, target URL, and engagement mix.
-            </p>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 sm:gap-3 flex-shrink-0">
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
             {[
               { label: "Views", value: totalViews.toLocaleString() },
               { label: "Runs", value: estimatedRunCount.toString() },
-              { label: "Duration", value: `${safePlan.estimatedDurationHours || 0}h` },
+              { label: "Hours", value: `${safePlan.estimatedDurationHours || 0}h` },
               { label: "Pattern", value: safePlan.patternName || "—" },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-2 text-center min-w-[70px]">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-100">{stat.label}</p>
-                <p className="mt-0.5 text-sm sm:text-base font-bold text-white tabular-nums truncate">
+              <div key={stat.label} className="rounded-md bg-white/10 backdrop-blur-sm border border-white/20 px-2 py-1.5 text-center">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-indigo-100">{stat.label}</p>
+                <p className="text-xs sm:text-sm font-bold text-white tabular-nums truncate">
                   {stat.value}
                 </p>
               </div>
@@ -425,276 +423,249 @@ export function NewOrderPage({
             <span>Comments {effectiveRatios.comments}%</span>
             <span>Reposts {effectiveRatios.reposts}%</span>
           </div>
-          <p className="text-sm font-medium mt-1 opacity-75">Adjust in the Ratios page.</p>
         </InfoBanner>
       )}
 
-      {/* ============ STEP 1: TARGET & VOLUME (merged) ============ */}
-      <Card padding="lg" className="border-2 border-slate-200 shadow-md">
-        <SectionTitle step="1" title="Target & volume" description="Where to deliver and how much" accent="indigo" />
-        <div className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-base font-bold text-slate-800 mb-2">
-                Order name
-              </label>
-              <input
-                value={orderName}
-                onChange={(e) => setOrderName(e.target.value)}
-                placeholder="e.g. Spring campaign"
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-slate-800 mb-2">
-                Total views
-              </label>
-              <input
-                type="number"
-                value={totalViews}
-                onChange={(e) => {
-                  setUseClonedPlan(false);
-                  const safeValue = Number.isFinite(Number(e.target.value)) ? Number(e.target.value) : 0;
-                  setTotalViews(Math.max(0, Math.floor(safeValue)));
-                }}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-900 tabular-nums focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-slate-800 mb-2">
-                Min views / run
-              </label>
-              <input
-                type="number"
-                value={minViewsPerRun}
-                onChange={(e) => handleMinViewsChange(Number(e.target.value))}
-                min={1}
-                max={10000}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-900 tabular-nums focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition"
-              />
-            </div>
-          </div>
+      {/* ============ 2x2 LUDO BOARD LAYOUT ============ */}
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-2">
+        
+        {/* === QUADRANT 1 (top-left): Target & Volume === */}
+        <Card padding="md" className="border-2 border-indigo-200 shadow-md bg-white">
+          <SectionTitle step="1" title="Target & volume" description="Where to send & how much" accent="indigo" />
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl bg-white border-2 border-slate-200 p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total runs</p>
-              <p className="mt-1 text-2xl sm:text-3xl font-extrabold text-indigo-600 tabular-nums">{estimatedRunCount}</p>
-            </div>
-            <div className="rounded-xl bg-white border-2 border-slate-200 p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Avg / run</p>
-              <p className="mt-1 text-2xl sm:text-3xl font-extrabold text-indigo-600 tabular-nums">{averageViewsPerRun.toLocaleString()}</p>
-            </div>
-            <div className="rounded-xl bg-white border-2 border-slate-200 p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Duration</p>
-              <p className="mt-1 text-2xl sm:text-3xl font-extrabold text-violet-600 tabular-nums">{safePlan.estimatedDurationHours || 0}h</p>
-            </div>
-            <div className="rounded-xl bg-white border-2 border-slate-200 p-3 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Interval</p>
-              <p className="mt-1 text-2xl sm:text-3xl font-extrabold text-violet-600 tabular-nums">{safePlan.approximateIntervalMin || 0}<span className="text-xs">min</span></p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-base font-bold text-slate-800 mb-2">
-              Post URL
-            </label>
-            <input
-              value={postUrl}
-              onChange={(e) => setPostUrl(e.target.value)}
-              placeholder="https://instagram.com/reel/..."
-              className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-base font-bold text-slate-800 mb-2">
-              Bulk links{" "}
-              <span className="text-sm font-medium text-slate-500">(one per line)</span>
-            </label>
-            <textarea
-              value={bulkLinks}
-              onChange={(e) => setBulkLinks(e.target.value)}
-              rows={3}
-              placeholder="Paste multiple URLs here..."
-              className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:outline-none resize-none transition"
-            />
-            {bulkLinks && (
-              <p className="mt-2 text-sm font-semibold text-indigo-600">
-                {(bulkLinks.match(/\n/g)?.length ?? 0) + 1} link{(bulkLinks.match(/\n/g)?.length ?? 0) > 0 ? "s" : ""} detected
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-base font-bold text-slate-800 mb-2">
-                API panel
-              </label>
-              <select
-                value={selectedApiId}
-                onChange={(e) => { setSelectedApiId(e.target.value); setSelectedBundleId(""); }}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition"
-              >
-                <option value="">Select API…</option>
-                {apis.map((api) => (
-                  <option key={api.id} value={api.id}>{api.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-base font-bold text-slate-800 mb-2">
-                Bundle
-              </label>
-              <select
-                value={selectedBundleId}
-                onChange={(e) => setSelectedBundleId(e.target.value)}
-                className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition"
-              >
-                <option value="">Select bundle…</option>
-                {bundleOptions.map((bundle) => (
-                  <option key={bundle.id} value={bundle.id}>{bundle.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* ============ STEP 2: DELIVERY PATTERN (merged) ============ */}
-      <Card padding="lg" className="border-2 border-violet-200 shadow-md">
-        <SectionTitle step="2" title="Delivery pattern" description="How to spread the views over time" accent="violet" />
-
-        <div className="space-y-5">
-          {/* Quick presets */}
-          <div>
-            <label className="block text-base font-bold text-slate-800 mb-3">
-              Quick presets
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {presetButtons.map((preset) => {
-                const isActive = quickPreset === preset.value;
-                return (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    onClick={() => handleApplyPreset(preset.value)}
-                    className={`rounded-xl px-4 py-3 text-base font-bold transition-all ${
-                      isActive
-                        ? "bg-violet-600 text-white shadow-lg shadow-violet-500/30 ring-2 ring-violet-300 scale-[1.02]"
-                        : "bg-white border-2 border-slate-200 text-slate-700 hover:border-violet-300 hover:bg-violet-50/50"
-                    }`}
-                  >
-                    <span className="block">{preset.emoji} {preset.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-2 text-sm font-semibold text-slate-500">
-              Each preset sets the delivery window, variance, and timing pattern.
-            </p>
-          </div>
-
-          {/* Delivery window */}
-          <div>
-            <label className="block text-base font-bold text-slate-800 mb-3">
-              Delivery window
-            </label>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {deliveryOptions.map((option) => {
-                const isActive = delivery.label === option.label;
-                return (
-                  <button
-                    key={option.label}
-                    type="button"
-                    onClick={() => { setUseClonedPlan(false); setDelivery(option); }}
-                    className={`rounded-xl px-3 py-3 text-base font-bold transition-all ${
-                      isActive
-                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-300 scale-[1.02]"
-                        : "bg-white border-2 border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50"
-                    }`}
-                  >
-                    <span className="block">{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {delivery.mode === "custom" && (
-              <div className="mt-3 flex items-center gap-3">
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Order name</label>
+                <input
+                  value={orderName}
+                  onChange={(e) => setOrderName(e.target.value)}
+                  placeholder="e.g. Spring campaign"
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:outline-none transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Total views</label>
                 <input
                   type="number"
-                  value={customHours}
+                  value={totalViews}
                   onChange={(e) => {
                     setUseClonedPlan(false);
-                    const safeHours = Number.isFinite(Number(e.target.value)) ? Number(e.target.value) : 1;
-                    const clampedHours = Math.max(1, Math.min(96, safeHours));
-                    setCustomHours(clampedHours);
-                    setDelivery({ mode: "custom", label: "Custom", hours: clampedHours });
+                    const safeValue = Number.isFinite(Number(e.target.value)) ? Number(e.target.value) : 0;
+                    setTotalViews(Math.max(0, Math.floor(safeValue)));
                   }}
-                  min={1}
-                  max={96}
-                  className="w-28 rounded-xl border-2 border-emerald-200 bg-white px-4 py-2.5 text-lg font-extrabold text-emerald-700 tabular-nums focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 focus:outline-none transition"
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900 tabular-nums focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:outline-none transition"
                 />
-                <span className="text-base font-bold text-slate-600">hours</span>
               </div>
-            )}
-          </div>
-
-          {/* Variance */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-base font-bold text-slate-800">
-                Random variance
-              </label>
-              <span className="rounded-lg bg-indigo-100 px-3 py-1 text-xl font-extrabold text-indigo-700 tabular-nums">
-                {variancePercent}%
-              </span>
-            </div>
-            <input
-              type="range"
-              value={variancePercent}
-              onChange={(e) => { setUseClonedPlan(false); setVariancePercent(Number(e.target.value)); }}
-              min={0}
-              max={50}
-              className="w-full"
-            />
-            <div className="flex justify-between text-sm font-semibold text-slate-500 mt-2">
-              <span>Smooth</span>
-              <span>Natural</span>
-            </div>
-          </div>
-
-          {/* Two-column row for peak hours + start delay */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => { setUseClonedPlan(false); setPeakHoursBoost(!peakHoursBoost); }}
-              className={`flex items-center justify-between gap-3 rounded-xl p-4 text-left transition-all ${
-                peakHoursBoost
-                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg ring-2 ring-orange-300"
-                  : "bg-white border-2 border-slate-200 text-slate-700 hover:border-orange-300"
-              }`}
-            >
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">🔥</span>
-                  <p className={`text-base font-bold ${peakHoursBoost ? "text-white" : "text-slate-900"}`}>
-                    Peak hours boost
-                  </p>
-                </div>
-                <p className={`text-sm font-medium mt-0.5 ${peakHoursBoost ? "text-white/80" : "text-slate-500"}`}>
-                  Amplify delivery 6 PM - 11 PM
-                </p>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Min / run</label>
+                <input
+                  type="number"
+                  value={minViewsPerRun}
+                  onChange={(e) => handleMinViewsChange(Number(e.target.value))}
+                  min={1}
+                  max={10000}
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900 tabular-nums focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:outline-none transition"
+                />
               </div>
-              <div className={`flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors ${peakHoursBoost ? "bg-white/30" : "bg-slate-300"}`}>
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${peakHoursBoost ? "translate-x-6" : "translate-x-1"}`} />
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              <div className="rounded-lg bg-indigo-50 border border-indigo-100 p-2 text-center">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Runs</p>
+                <p className="mt-0.5 text-base font-extrabold text-indigo-700 tabular-nums">{estimatedRunCount}</p>
               </div>
-            </button>
+              <div className="rounded-lg bg-indigo-50 border border-indigo-100 p-2 text-center">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Avg/run</p>
+                <p className="mt-0.5 text-base font-extrabold text-indigo-700 tabular-nums">{averageViewsPerRun.toLocaleString()}</p>
+              </div>
+              <div className="rounded-lg bg-violet-50 border border-violet-100 p-2 text-center">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Hours</p>
+                <p className="mt-0.5 text-base font-extrabold text-violet-700 tabular-nums">{safePlan.estimatedDurationHours || 0}h</p>
+              </div>
+              <div className="rounded-lg bg-violet-50 border border-violet-100 p-2 text-center">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Interval</p>
+                <p className="mt-0.5 text-base font-extrabold text-violet-700 tabular-nums">{safePlan.approximateIntervalMin || 0}<span className="text-[10px]">m</span></p>
+              </div>
+            </div>
 
             <div>
-              <label className="block text-base font-bold text-slate-800 mb-2">
-                Start delay
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Post URL</label>
+              <input
+                value={postUrl}
+                onChange={(e) => setPostUrl(e.target.value)}
+                placeholder="https://instagram.com/reel/..."
+                className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:outline-none transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Bulk links <span className="text-[10px] font-medium text-slate-500">(one per line)</span>
               </label>
-              <div className="flex items-center gap-3">
+              <textarea
+                value={bulkLinks}
+                onChange={(e) => setBulkLinks(e.target.value)}
+                rows={2}
+                placeholder="Paste multiple URLs…"
+                className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:outline-none resize-none transition"
+              />
+              {bulkLinks && (
+                <p className="mt-1 text-[10px] font-bold text-indigo-600">
+                  {(bulkLinks.match(/\n/g)?.length ?? 0) + 1} link{(bulkLinks.match(/\n/g)?.length ?? 0) > 0 ? "s" : ""} detected
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">API panel</label>
+                <select
+                  value={selectedApiId}
+                  onChange={(e) => { setSelectedApiId(e.target.value); setSelectedBundleId(""); }}
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:outline-none transition"
+                >
+                  <option value="">Select API…</option>
+                  {apis.map((api) => (
+                    <option key={api.id} value={api.id}>{api.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Bundle</label>
+                <select
+                  value={selectedBundleId}
+                  onChange={(e) => setSelectedBundleId(e.target.value)}
+                  className="w-full rounded-lg border-2 border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 focus:outline-none transition"
+                >
+                  <option value="">Select bundle…</option>
+                  {bundleOptions.map((bundle) => (
+                    <option key={bundle.id} value={bundle.id}>{bundle.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* === QUADRANT 2 (top-right): Delivery Pattern === */}
+        <Card padding="md" className="border-2 border-violet-200 shadow-md bg-white">
+          <SectionTitle step="2" title="Delivery pattern" description="How to spread views over time" accent="violet" />
+
+          <div className="space-y-3">
+            {/* Quick presets */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Quick presets</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {presetButtons.map((preset) => {
+                  const isActive = quickPreset === preset.value;
+                  return (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => handleApplyPreset(preset.value)}
+                      className={`rounded-lg px-2 py-2 text-xs font-bold transition-all ${
+                        isActive
+                          ? "bg-violet-600 text-white shadow-md ring-2 ring-violet-300 scale-[1.02]"
+                          : "bg-white border-2 border-slate-200 text-slate-700 hover:border-violet-300 hover:bg-violet-50/50"
+                      }`}
+                    >
+                      <span className="block">{preset.emoji} {preset.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Delivery window */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">Delivery window</label>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                {deliveryOptions.map((option) => {
+                  const isActive = delivery.label === option.label;
+                  return (
+                    <button
+                      key={option.label}
+                      type="button"
+                      onClick={() => { setUseClonedPlan(false); setDelivery(option); }}
+                      className={`rounded-lg px-2 py-2 text-xs font-bold transition-all ${
+                        isActive
+                          ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-300 scale-[1.02]"
+                          : "bg-white border-2 border-slate-200 text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50"
+                      }`}
+                    >
+                      <span className="block">{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {delivery.mode === "custom" && (
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={customHours}
+                    onChange={(e) => {
+                      setUseClonedPlan(false);
+                      const safeHours = Number.isFinite(Number(e.target.value)) ? Number(e.target.value) : 1;
+                      const clampedHours = Math.max(1, Math.min(96, safeHours));
+                      setCustomHours(clampedHours);
+                      setDelivery({ mode: "custom", label: "Custom", hours: clampedHours });
+                    }}
+                    min={1}
+                    max={96}
+                    className="w-24 rounded-lg border-2 border-emerald-200 bg-white px-3 py-2 text-sm font-extrabold text-emerald-700 tabular-nums focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 focus:outline-none transition"
+                  />
+                  <span className="text-xs font-bold text-slate-600">hours</span>
+                </div>
+              )}
+            </div>
+
+            {/* Variance */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700">Random variance</label>
+                <span className="rounded-md bg-indigo-100 px-2 py-0.5 text-sm font-extrabold text-indigo-700 tabular-nums">
+                  {variancePercent}%
+                </span>
+              </div>
+              <input
+                type="range"
+                value={variancePercent}
+                onChange={(e) => { setUseClonedPlan(false); setVariancePercent(Number(e.target.value)); }}
+                min={0}
+                max={50}
+                className="w-full"
+              />
+            </div>
+
+            {/* Two-column row: peak hours + start delay */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => { setUseClonedPlan(false); setPeakHoursBoost(!peakHoursBoost); }}
+                className={`flex items-center justify-between gap-2 rounded-lg p-2.5 text-left transition-all ${
+                  peakHoursBoost
+                    ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md ring-2 ring-orange-300"
+                    : "bg-white border-2 border-slate-200 text-slate-700 hover:border-orange-300"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">🔥</span>
+                    <p className={`text-xs font-bold ${peakHoursBoost ? "text-white" : "text-slate-900"}`}>
+                      Peak hours
+                    </p>
+                  </div>
+                  <p className={`text-[10px] font-medium mt-0.5 ${peakHoursBoost ? "text-white/80" : "text-slate-500"}`}>
+                    Boost 6 PM - 11 PM
+                  </p>
+                </div>
+                <div className={`flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${peakHoursBoost ? "bg-white/30" : "bg-slate-300"}`}>
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${peakHoursBoost ? "translate-x-4" : "translate-x-0.5"}`} />
+                </div>
+              </button>
+
+              <div className="flex items-center gap-2 rounded-lg border-2 border-slate-200 bg-white px-3 py-2">
                 <input
                   type="number"
                   value={startDelayHours}
@@ -705,186 +676,183 @@ export function NewOrderPage({
                   }}
                   min={0}
                   max={168}
-                  className="w-28 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-lg font-bold text-slate-900 tabular-nums focus:border-violet-500 focus:ring-4 focus:ring-violet-100 focus:outline-none transition"
+                  className="w-16 rounded border border-slate-200 bg-white px-2 py-1 text-sm font-bold text-slate-900 tabular-nums focus:border-violet-500 focus:outline-none"
                 />
-                <span className="text-base font-bold text-slate-600">hours before deploy</span>
+                <div>
+                  <p className="text-xs font-bold text-slate-900 leading-tight">Start delay</p>
+                  <p className="text-[10px] text-slate-500">hours before deploy</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
 
-      {/* ============ STEP 3: SCHEDULE PREVIEW (merged chart + stats + table) ============ */}
-      <SchedulePreview
-        plan={safePlan}
-        variancePercent={variancePercent}
-        delivery={delivery}
-        includeLikes={includeLikes}
-        includeShares={includeShares}
-        includeSaves={includeSaves}
-        includeComments={includeComments}
-        includeReposts={includeReposts}
-        peakHoursBoost={peakHoursBoost}
-      />
+        {/* === QUADRANT 3 (bottom-left): Schedule Preview (chart + stats) === */}
+        <Card padding="md" className="border-2 border-emerald-200 shadow-md bg-gradient-to-br from-white to-emerald-50/20">
+          <SchedulePreviewCompact
+            plan={safePlan}
+            variancePercent={variancePercent}
+            delivery={delivery}
+            includeLikes={includeLikes}
+            includeShares={includeShares}
+            includeSaves={includeSaves}
+            includeComments={includeComments}
+            includeReposts={includeReposts}
+            peakHoursBoost={peakHoursBoost}
+          />
+        </Card>
 
-      {/* ============ STEP 4: ENGAGEMENT MIX ============ */}
-      <Card padding="lg" className="border-2 border-pink-200 shadow-md">
-        <SectionTitle step="3" title="Engagement mix" description="Toggle the engagement types you need" accent="amber" />
+        {/* === QUADRANT 4 (bottom-right): Engagement Mix === */}
+        <Card padding="md" className="border-2 border-amber-200 shadow-md bg-white">
+          <SectionTitle step="3" title="Engagement mix" description="Toggle engagement types" accent="amber" />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[
-            { label: "Likes", description: "Heart reactions", active: includeLikes, toggle: () => { setUseClonedPlan(false); setIncludeLikes(!includeLikes); }, color: "pink", emoji: "❤️" },
-            { label: "Shares", description: "Forward to friends", active: includeShares, toggle: () => { setUseClonedPlan(false); setIncludeShares(!includeShares); }, color: "sky", emoji: "🔁" },
-            { label: "Saves", description: "Bookmark posts", active: includeSaves, toggle: () => { setUseClonedPlan(false); setIncludeSaves(!includeSaves); }, color: "violet", emoji: "🔖" },
-            { label: "Reposts", description: "Share to feed", active: includeReposts, toggle: () => { setUseClonedPlan(false); setIncludeReposts(!includeReposts); }, color: "cyan", emoji: "📢" },
-            { label: "Comments", description: "Custom text", active: includeComments, toggle: () => { setUseClonedPlan(false); setIncludeComments(!includeComments); }, color: "amber", emoji: "💬" },
-          ].map((btn) => {
-            const tones: Record<string, { bg: string; ring: string }> = {
-              pink: { bg: "bg-pink-600", ring: "ring-pink-300" },
-              sky: { bg: "bg-sky-600", ring: "ring-sky-300" },
-              violet: { bg: "bg-violet-600", ring: "ring-violet-300" },
-              cyan: { bg: "bg-cyan-600", ring: "ring-cyan-300" },
-              amber: { bg: "bg-amber-600", ring: "ring-amber-300" },
-            };
-            const t = tones[btn.color];
-            return (
-              <button
-                key={btn.label}
-                type="button"
-                onClick={btn.toggle}
-                className={`flex items-center justify-between gap-3 rounded-xl p-4 text-left transition-all ${
-                  btn.active
-                    ? `${t.bg} text-white shadow-lg ring-2 ${t.ring} scale-[1.01]`
-                    : "bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300"
-                }`}
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{btn.emoji}</span>
-                    <p className={`text-base font-bold ${btn.active ? "text-white" : "text-slate-900"}`}>
-                      {btn.label}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { label: "Likes", description: "Heart reactions", active: includeLikes, toggle: () => { setUseClonedPlan(false); setIncludeLikes(!includeLikes); }, color: "pink", emoji: "❤️" },
+              { label: "Shares", description: "Forward to friends", active: includeShares, toggle: () => { setUseClonedPlan(false); setIncludeShares(!includeShares); }, color: "sky", emoji: "🔁" },
+              { label: "Saves", description: "Bookmark posts", active: includeSaves, toggle: () => { setUseClonedPlan(false); setIncludeSaves(!includeSaves); }, color: "violet", emoji: "🔖" },
+              { label: "Reposts", description: "Share to feed", active: includeReposts, toggle: () => { setUseClonedPlan(false); setIncludeReposts(!includeReposts); }, color: "cyan", emoji: "📢" },
+              { label: "Comments", description: "Custom text", active: includeComments, toggle: () => { setUseClonedPlan(false); setIncludeComments(!includeComments); }, color: "amber", emoji: "💬" },
+            ].map((btn) => {
+              const tones: Record<string, { bg: string; ring: string }> = {
+                pink: { bg: "bg-pink-600", ring: "ring-pink-300" },
+                sky: { bg: "bg-sky-600", ring: "ring-sky-300" },
+                violet: { bg: "bg-violet-600", ring: "ring-violet-300" },
+                cyan: { bg: "bg-cyan-600", ring: "ring-cyan-300" },
+                amber: { bg: "bg-amber-600", ring: "ring-amber-300" },
+              };
+              const t = tones[btn.color];
+              return (
+                <button
+                  key={btn.label}
+                  type="button"
+                  onClick={btn.toggle}
+                  className={`flex items-center justify-between gap-2 rounded-lg p-2.5 text-left transition-all ${
+                    btn.active
+                      ? `${t.bg} text-white shadow-md ring-2 ${t.ring}`
+                      : "bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">{btn.emoji}</span>
+                      <p className={`text-xs font-bold ${btn.active ? "text-white" : "text-slate-900"}`}>
+                        {btn.label}
+                      </p>
+                    </div>
+                    <p className={`text-[10px] font-medium mt-0.5 ${btn.active ? "text-white/80" : "text-slate-500"}`}>
+                      {btn.description}
                     </p>
                   </div>
-                  <p className={`text-sm font-medium mt-0.5 ${btn.active ? "text-white/80" : "text-slate-500"}`}>
-                    {btn.description}
-                  </p>
-                </div>
-                <div className={`flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors ${btn.active ? "bg-white/30" : "bg-slate-300"}`}>
-                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${btn.active ? "translate-x-6" : "translate-x-1"}`} />
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div className={`flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${btn.active ? "bg-white/30" : "bg-slate-300"}`}>
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${btn.active ? "translate-x-4" : "translate-x-0.5"}`} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-        {includeComments && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="mt-5"
-          >
-            <label className="block text-base font-bold text-slate-800 mb-2">
-              Custom comments{" "}
-              <span className="text-sm font-medium text-slate-500">(one per line)</span>
-            </label>
-            <textarea
-              value={customComments}
-              onChange={(e) => setCustomComments(e.target.value)}
-              rows={4}
-              placeholder={"Nice post!\n🔥🔥\nAmazing"}
-              className="w-full rounded-xl border-2 border-amber-200 bg-white px-4 py-3 text-base font-semibold text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 focus:outline-none resize-none transition"
-            />
-          </motion.div>
-        )}
-      </Card>
+          {includeComments && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="mt-3"
+            >
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Custom comments <span className="text-[10px] font-medium text-slate-500">(one per line)</span>
+              </label>
+              <textarea
+                value={customComments}
+                onChange={(e) => setCustomComments(e.target.value)}
+                rows={2}
+                placeholder={"Nice post!\n🔥🔥\nAmazing"}
+                className="w-full rounded-lg border-2 border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none resize-none transition"
+              />
+            </motion.div>
+          )}
+        </Card>
+      </div>
 
       {/* ============ STICKY FOOTER: COST + DEPLOY (merged) ============ */}
-      <div className="sticky bottom-4 z-10">
-        <div className="rounded-2xl border-2 border-indigo-200 bg-white shadow-2xl shadow-indigo-500/20 overflow-hidden">
-          {/* Status row */}
-          <div className="px-4 sm:px-5 py-3 border-b border-slate-200 flex flex-wrap items-center gap-3">
+      <div className="sticky bottom-3 z-10">
+        <div className="rounded-xl border-2 border-indigo-200 bg-white shadow-2xl shadow-indigo-500/20 overflow-hidden">
+          <div className="px-3 sm:px-4 py-2 border-b border-slate-200 flex flex-wrap items-center gap-3">
             {createError ? (
-              <div className="flex items-center gap-2 text-base font-semibold text-rose-700">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-rose-600 font-bold">!</span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-rose-700">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-rose-600 font-bold text-xs">!</span>
                 <span>{createError}</span>
               </div>
             ) : createSuccess ? (
-              <div className="flex items-center gap-2 text-base font-semibold text-emerald-700">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold">✓</span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-emerald-700">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xs">✓</span>
                 <span>{createSuccess}</span>
               </div>
             ) : (
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1.5 text-sm font-bold text-indigo-700">
-                  <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
-                  Ready to deploy
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-bold text-indigo-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                  Ready
                 </span>
-                <span className="text-sm font-bold text-slate-700 tabular-nums">
+                <span className="text-xs font-bold text-slate-700 tabular-nums">
                   {estimatedRunCount} runs · ~{averageViewsPerRun.toLocaleString()} views/run
                 </span>
               </div>
             )}
           </div>
 
-          {/* Cost + deploy row */}
-          <div className="px-4 sm:px-5 py-4 bg-gradient-to-r from-slate-50 to-indigo-50/30 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            {/* Cost breakdown */}
-            <div className="flex flex-col gap-2 min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                💰 Estimated cost
-              </p>
+          <div className="px-3 sm:px-4 py-3 bg-gradient-to-r from-slate-50 to-indigo-50/30 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-1 min-w-0">
               {totalCost && totalCost.total > 0 ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-3xl sm:text-4xl font-extrabold text-indigo-700 tabular-nums">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-indigo-700 tabular-nums">
                     ₹{totalCost.total.toFixed(2)}
                   </span>
-                  <div className="flex flex-wrap gap-1.5 ml-2">
+                  <div className="flex flex-wrap gap-1">
                     {totalCost.views > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">
+                      <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
                         Views ₹{totalCost.views.toFixed(0)}
                       </span>
                     )}
                     {includeLikes && totalCost.likes > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 px-2 py-0.5 text-xs font-bold text-pink-700">
+                      <span className="inline-flex items-center rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-700">
                         ❤️ ₹{totalCost.likes.toFixed(0)}
                       </span>
                     )}
                     {includeShares && totalCost.shares > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700">
+                      <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700">
                         🔁 ₹{totalCost.shares.toFixed(0)}
                       </span>
                     )}
                     {includeSaves && totalCost.saves > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-700">
+                      <span className="inline-flex items-center rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
                         🔖 ₹{totalCost.saves.toFixed(0)}
                       </span>
                     )}
                     {includeReposts && totalCost.reposts > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-bold text-cyan-700">
+                      <span className="inline-flex items-center rounded-full bg-cyan-100 px-2 py-0.5 text-[10px] font-bold text-cyan-700">
                         📢 ₹{totalCost.reposts.toFixed(0)}
                       </span>
                     )}
                     {includeComments && totalCost.comments > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700">
+                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                         💬 ₹{totalCost.comments.toFixed(0)}
                       </span>
                     )}
                   </div>
                 </div>
               ) : (
-                <p className="text-sm font-bold text-slate-500">Select an API & bundle to see cost</p>
+                <p className="text-xs font-bold text-slate-500">Select API & bundle to see cost</p>
               )}
             </div>
 
-            {/* Deploy button */}
             <Button
               variant="primary"
               size="lg"
               loading={isCreatingOrder}
               disabled={isCreatingOrder}
-              className="text-base font-extrabold shadow-lg shadow-indigo-500/40"
+              className="text-sm font-extrabold shadow-lg shadow-indigo-500/40"
               icon={
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               }
@@ -1096,6 +1064,181 @@ export function NewOrderPage({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ============================================ */
+/* COMPACT SCHEDULE PREVIEW (for grid layout)  */
+/* ============================================ */
+
+import { Card as _Card, Button as _Button, StatusPill as _StatusPill } from "../components/ui";
+import {
+  CartesianGrid as _CartesianGrid,
+  Legend as _Legend,
+  Line as _Line,
+  LineChart as _LineChart,
+  ResponsiveContainer as _ResponsiveContainer,
+  Tooltip as _Tooltip,
+  XAxis as _XAxis,
+  YAxis as _YAxis,
+} from "recharts";
+import type { FavouriteConfig as _FavouriteConfig } from "../components/SchedulePreview";
+
+interface SchedulePreviewCompactProps {
+  plan: PatternPlan;
+  variancePercent?: number;
+  delivery?: DeliveryOption;
+  includeLikes?: boolean;
+  includeShares?: boolean;
+  includeSaves?: boolean;
+  includeComments?: boolean;
+  includeReposts?: boolean;
+  peakHoursBoost?: boolean;
+}
+
+const COMPACT_COLORS = {
+  views: "#4f46e5",
+  likes: "#ec4899",
+  shares: "#0ea5e9",
+  saves: "#8b5cf6",
+  reposts: "#06b6d4",
+  comments: "#10b981",
+};
+
+function CompactTooltip({ active, payload, label }: any) {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div className="bg-white rounded-lg border-2 border-slate-200 shadow-xl px-3 py-2 text-xs">
+      <p className="text-slate-500 mb-1 font-bold uppercase tracking-wider text-[10px]">{label}</p>
+      {payload.slice(0, 3).map((entry: any) => (
+        <p key={entry.name} style={{ color: entry.color }} className="font-bold tabular-nums">
+          {entry.name}: {Math.round(entry.value).toLocaleString()}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function buildCompactGraphData(plan: PatternPlan) {
+  const safeRuns = plan?.runs || [];
+  return safeRuns.map((run) => ({
+    label: run.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    views: run.cumulativeViews || 0,
+    likes: (run.cumulativeLikes || 0) * 10,
+    shares: (run.cumulativeShares || 0) * 10,
+    saves: (run.cumulativeSaves || 0) * 10,
+    reposts: (run.cumulativeReposts || 0) * 10,
+    comments: (run.cumulativeComments || 0) * 10,
+  }));
+}
+
+function SchedulePreviewCompact({
+  plan,
+  variancePercent,
+  delivery,
+  includeLikes,
+  includeShares,
+  includeSaves,
+  includeComments,
+  includeReposts,
+  peakHoursBoost,
+}: SchedulePreviewCompactProps) {
+  const [graphMode, setGraphMode] = useState<"smooth" | "stepped">("smooth");
+  const safeRuns = plan?.runs || [];
+  const safeFinishTime = plan?.finishTime instanceof Date ? plan.finishTime : new Date();
+  const riskKind = plan?.risk === "Safe" ? "success" : plan?.risk === "Medium" ? "warning" : "danger";
+  const riskLabel = plan?.risk ?? "Safe";
+
+  const smoothData = useMemo(() => {
+    const safeRuns = plan?.runs || [];
+    const rows: any[] = [];
+    rows.push({ label: "0m", views: 0, likes: 0, shares: 0, saves: 0, reposts: 0, comments: 0 });
+    for (let i = 0; i < safeRuns.length; i++) {
+      const current = safeRuns[i];
+      const prev = i === 0 ? { minutesFromStart: 0, cumulativeViews: 0, cumulativeLikes: 0, cumulativeShares: 0, cumulativeSaves: 0, cumulativeReposts: 0, cumulativeComments: 0 } : safeRuns[i - 1];
+      const dt = Math.max(1, current.minutesFromStart - prev.minutesFromStart);
+      const phase = i / Math.max(1, safeRuns.length - 1);
+      const eased = (start: number, end: number, progress: number) => {
+        const delta = end - start;
+        const v = start + delta * Math.pow(progress, phase < 0.2 ? 1.8 : phase > 0.8 ? 0.88 : 1.05);
+        return Math.max(0, v);
+      };
+      const wave = Math.sin((i + 1) * 1.13 + phase * Math.PI * 1.7);
+      const mA = prev.minutesFromStart + dt * 0.38;
+      const mB = prev.minutesFromStart + dt * 0.76;
+      rows.push({ label: `${Math.round(mA)}m`, views: eased(prev.cumulativeViews, current.cumulativeViews, 0.38) + wave * 100, likes: eased(prev.cumulativeLikes, current.cumulativeLikes, 0.38), shares: eased(prev.cumulativeShares, current.cumulativeShares, 0.38), saves: eased(prev.cumulativeSaves, current.cumulativeSaves, 0.38), reposts: eased(prev.cumulativeReposts, current.cumulativeReposts, 0.38), comments: eased(prev.cumulativeComments, current.cumulativeComments, 0.38) });
+      rows.push({ label: `${Math.round(mB)}m`, views: eased(prev.cumulativeViews, current.cumulativeViews, 0.76) - wave * 100, likes: eased(prev.cumulativeLikes, current.cumulativeLikes, 0.76), shares: eased(prev.cumulativeShares, current.cumulativeShares, 0.76), saves: eased(prev.cumulativeSaves, current.cumulativeSaves, 0.76), reposts: eased(prev.cumulativeReposts, current.cumulativeReposts, 0.76), comments: eased(prev.cumulativeComments, current.cumulativeComments, 0.76) });
+      rows.push({ label: current.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), views: current.cumulativeViews, likes: current.cumulativeLikes, shares: current.cumulativeShares, saves: current.cumulativeSaves, reposts: current.cumulativeReposts, comments: current.cumulativeComments });
+    }
+    return rows;
+  }, [plan]);
+
+  const steppedData = useMemo(() => buildCompactGraphData(plan), [plan]);
+  const chartData = graphMode === "smooth" ? smoothData : steppedData;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white text-base sm:text-lg font-extrabold shadow-md">
+            📊
+          </div>
+          <div>
+            <h3 className="text-lg sm:text-xl font-bold tracking-tight text-emerald-700">Schedule preview</h3>
+            <p className="text-xs sm:text-sm text-slate-600 font-medium leading-tight">
+              Pattern: <span className="text-emerald-700 font-bold">{plan?.patternName || "—"}</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusPill kind={riskKind} className="text-xs font-bold">{riskLabel}</StatusPill>
+          <div className="inline-flex rounded-lg border-2 border-slate-200 bg-slate-50 p-0.5">
+            <button onClick={() => setGraphMode("smooth")} className={`rounded-md px-2 py-1 text-[10px] font-bold transition ${graphMode === "smooth" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600"}`}>Smooth</button>
+            <button onClick={() => setGraphMode("stepped")} className={`rounded-md px-2 py-1 text-[10px] font-bold transition ${graphMode === "stepped" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600"}`}>Stepped</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="rounded-lg bg-white border border-slate-200 p-2 text-center">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Runs</p>
+          <p className="mt-0.5 text-lg font-extrabold text-emerald-700 tabular-nums">{plan?.totalRuns ?? 0}</p>
+        </div>
+        <div className="rounded-lg bg-white border border-slate-200 p-2 text-center">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Interval</p>
+          <p className="mt-0.5 text-lg font-extrabold text-emerald-700 tabular-nums">{plan?.approximateIntervalMin ?? 0}<span className="text-[10px]">m</span></p>
+        </div>
+        <div className="rounded-lg bg-white border border-slate-200 p-2 text-center">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Finish</p>
+          <p className="mt-0.5 text-xs font-extrabold text-slate-900 leading-tight">
+            {safeFinishTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            <span className="block text-[10px] font-bold text-slate-500">{safeFinishTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          </p>
+        </div>
+      </div>
+
+      <div className="h-44 sm:h-52">
+        <_ResponsiveContainer width="100%" height="100%">
+          <_LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+            <_CartesianGrid strokeDasharray="3 3" stroke="#e6e8ec" />
+            <_XAxis dataKey="label" tick={{ fill: "#475569", fontSize: 10, fontWeight: 600 }} minTickGap={20} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
+            <_YAxis tick={{ fill: "#475569", fontSize: 10, fontWeight: 600 }} width={40} axisLine={false} tickLine={false} />
+            <_Tooltip content={<CompactTooltip />} />
+            <_Legend wrapperStyle={{ fontSize: "11px", color: "#1e293b", paddingTop: 6, fontWeight: 600 }} iconType="circle" />
+            <_Line type="monotone" dataKey="views" name="Views" stroke={COMPACT_COLORS.views} strokeWidth={2.5} dot={false} isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="likes" name="Likes" stroke={COMPACT_COLORS.likes} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="shares" name="Shares" stroke={COMPACT_COLORS.shares} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="saves" name="Saves" stroke={COMPACT_COLORS.saves} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="reposts" name="Reposts" stroke={COMPACT_COLORS.reposts} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="comments" name="Comments" stroke={COMPACT_COLORS.comments} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
+          </_LineChart>
+        </_ResponsiveContainer>
+      </div>
+
+      <p className="mt-2 text-[10px] font-semibold text-slate-500 text-center">
+        {graphMode === "smooth" ? "〰️ Smooth: Cumulative growth curve" : "📊 Stepped: Per-run cumulative view"}
+      </p>
     </div>
   );
 }
