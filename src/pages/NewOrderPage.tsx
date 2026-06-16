@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { SchedulePreview } from "../components/SchedulePreview";
+import { RunTable } from "../components/RunTable";
 import type {
   ApiPanel,
   Bundle,
@@ -1092,8 +1093,8 @@ function CompactTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null;
   return (
     <div className="bg-white rounded-lg border-2 border-slate-200 shadow-xl px-3 py-2 text-xs">
-      <p className="text-slate-500 mb-1 font-bold uppercase tracking-wider text-[10px]">{label}</p>
-      {payload.slice(0, 3).map((entry: any) => (
+      <p className="text-slate-500 mb-1.5 font-bold uppercase tracking-wider text-[10px]">{label}</p>
+      {payload.map((entry: any) => (
         <p key={entry.name} style={{ color: entry.color }} className="font-bold tabular-nums">
           {entry.name}: {Math.round(entry.value).toLocaleString()}
         </p>
@@ -1130,6 +1131,7 @@ function SchedulePreviewCompact({
   onApplyPreset,
 }: SchedulePreviewCompactProps) {
   const [graphMode, setGraphMode] = useState<"smooth" | "stepped">("smooth");
+  const [expandedRuns, setExpandedRuns] = useState(false);
   const safeRuns = plan?.runs || [];
   const safeFinishTime = plan?.finishTime instanceof Date ? plan.finishTime : new Date();
   const riskKind = plan?.risk === "Safe" ? "success" : plan?.risk === "Medium" ? "warning" : "danger";
@@ -1247,9 +1249,37 @@ function SchedulePreviewCompact({
         </_ResponsiveContainer>
       </div>
 
-      <p className="mt-2 text-[10px] font-semibold text-slate-500 text-center">
-        {graphMode === "smooth" ? "〰️ Smooth: Cumulative growth curve" : "📊 Stepped: Per-run cumulative view"}
-      </p>
+      {/* View runs toggle */}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => setExpandedRuns((prev) => !prev)}
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+            expandedRuns
+              ? "border-emerald-500 bg-emerald-500/10 text-emerald-700"
+              : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50"
+          }`}
+        >
+          {expandedRuns ? "🔼 Hide runs" : `📋 View runs (${safeRuns.length})`}
+        </button>
+        <p className="text-[10px] font-semibold text-slate-500">
+          {graphMode === "smooth" ? "〰️ Smooth: Cumulative growth curve" : "📊 Stepped: Per-run cumulative view"}
+        </p>
+      </div>
+
+      {/* Run table (expandable) */}
+      <AnimatePresence initial={false}>
+        {expandedRuns && safeRuns.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mt-2"
+          >
+            <RunTable runs={safeRuns} mode="schedule" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
