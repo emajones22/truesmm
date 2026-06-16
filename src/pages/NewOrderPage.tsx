@@ -553,30 +553,6 @@ export function NewOrderPage({
           <SectionTitle step="2" title="Delivery pattern" description="How to spread views over time" accent="violet" />
 
           <div className="space-y-3">
-            {/* Quick presets */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Quick presets</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {presetButtons.map((preset) => {
-                  const isActive = quickPreset === preset.value;
-                  return (
-                    <button
-                      key={preset.value}
-                      type="button"
-                      onClick={() => handleApplyPreset(preset.value)}
-                      className={`rounded-lg px-2 py-2 text-xs font-bold transition-all ${
-                        isActive
-                          ? "bg-violet-600 text-white shadow-md ring-2 ring-violet-300 scale-[1.02]"
-                          : "bg-white border-2 border-slate-200 text-slate-700 hover:border-violet-300 hover:bg-violet-50/50"
-                      }`}
-                    >
-                      <span className="block">{preset.emoji} {preset.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {/* Delivery window */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">Delivery window</label>
@@ -699,6 +675,9 @@ export function NewOrderPage({
             includeComments={includeComments}
             includeReposts={includeReposts}
             peakHoursBoost={peakHoursBoost}
+            quickPreset={quickPreset}
+            presetButtons={presetButtons}
+            onApplyPreset={handleApplyPreset}
           />
         </Card>
 
@@ -1095,6 +1074,9 @@ interface SchedulePreviewCompactProps {
   includeComments?: boolean;
   includeReposts?: boolean;
   peakHoursBoost?: boolean;
+  quickPreset?: QuickPatternPreset | null;
+  presetButtons?: Array<{ label: string; value: QuickPatternPreset; emoji: string }>;
+  onApplyPreset?: (preset: QuickPatternPreset) => void;
 }
 
 const COMPACT_COLORS = {
@@ -1143,6 +1125,9 @@ function SchedulePreviewCompact({
   includeComments,
   includeReposts,
   peakHoursBoost,
+  quickPreset,
+  presetButtons,
+  onApplyPreset,
 }: SchedulePreviewCompactProps) {
   const [graphMode, setGraphMode] = useState<"smooth" | "stepped">("smooth");
   const safeRuns = plan?.runs || [];
@@ -1199,6 +1184,32 @@ function SchedulePreviewCompact({
           </div>
         </div>
       </div>
+
+      {/* Quick presets ABOVE the chart */}
+      {presetButtons && onApplyPreset && (
+        <div className="mb-3">
+          <label className="block text-xs font-bold text-slate-700 mb-1.5">Quick presets</label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {presetButtons.map((preset) => {
+              const isActive = quickPreset === preset.value;
+              return (
+                <button
+                  key={preset.value}
+                  type="button"
+                  onClick={() => onApplyPreset(preset.value)}
+                  className={`rounded-lg px-2 py-2 text-xs font-bold transition-all ${
+                    isActive
+                      ? "bg-violet-600 text-white shadow-md ring-2 ring-violet-300 scale-[1.02]"
+                      : "bg-white border-2 border-slate-200 text-slate-700 hover:border-violet-300 hover:bg-violet-50/50"
+                  }`}
+                >
+                  <span className="block">{preset.emoji} {preset.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div className="rounded-lg bg-white border border-slate-200 p-2 text-center">
