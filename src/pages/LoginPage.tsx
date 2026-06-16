@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { getBrowserFingerprint } from "../lib/fingerprint";
 
-const STORAGE_KEY = "gotham-access-key";
+const STORAGE_KEY = "truesmm-access-key";
 
 interface LoginPageProps {
   onAuthenticated: () => void;
@@ -170,9 +170,9 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-black to-gray-950" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-500/5 via-transparent to-transparent" />
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-slate-50" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-50 via-transparent to-transparent" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -189,10 +189,10 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
           >
             <div className="relative">
               <div
-                className="absolute inset-0 animate-ping rounded-full bg-yellow-500/20"
+                className="absolute inset-0 animate-ping rounded-full bg-blue-100"
                 style={{ animationDuration: "3s" }}
               />
-              <span className="relative text-6xl">🦇</span>
+              <span className="relative text-6xl">🚀</span>
             </div>
           </motion.div>
           <motion.div
@@ -200,11 +200,11 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-yellow-400">
-              GOTHAM
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-blue-600">
+              TRUESMM
             </h1>
-            <p className="mt-1 text-sm text-yellow-600">SMM Command Center</p>
-            <p className="mt-3 text-xs text-gray-600">
+            <p className="mt-1 text-sm text-slate-500">TRUESMM Panel</p>
+            <p className="mt-3 text-xs text-slate-600">
               Restricted access. Authorized personnel only.
             </p>
           </motion.div>
@@ -214,7 +214,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="rounded-2xl border border-yellow-500/20 bg-gradient-to-br from-gray-900 to-black p-8 shadow-2xl shadow-yellow-500/5"
+          className="rounded-2xl border border-slate-200 bg-white p-8 shadow-2xl shadow-slate-200/50"
         >
           {success ? (
             <motion.div
@@ -223,20 +223,20 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
               className="text-center py-4"
             >
               <span className="text-5xl">✅</span>
-              <p className="mt-4 text-lg font-semibold text-emerald-400">
+              <p className="mt-4 text-lg font-semibold text-emerald-600">
                 Access Granted
               </p>
-              <p className="mt-1 text-sm text-gray-500">
-                Welcome to Gotham Command...
+              <p className="mt-1 text-sm text-slate-500">
+                Welcome to TRUESMM Panel...
               </p>
               {remainingMsg && (
-                <p className="mt-2 text-xs text-yellow-500">{remainingMsg}</p>
+                <p className="mt-2 text-xs text-blue-600">{remainingMsg}</p>
               )}
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">
+                <label className="block text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">
                   Access Key
                 </label>
                 <input
@@ -246,10 +246,10 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
                     setKeyInput(e.target.value.toUpperCase());
                     setError("");
                   }}
-                  placeholder="GOTHAM-KEY-XXX"
+                  placeholder="TRUESMM-KEY-XXX"
                   disabled={loading}
                   autoFocus
-                  className="w-full rounded-xl border border-yellow-500/30 bg-black px-4 py-3 text-sm text-white placeholder-gray-700 focus:border-yellow-500/60 focus:outline-none focus:ring-1 focus:ring-yellow-500/30 transition disabled:opacity-50 font-mono tracking-widest"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition disabled:opacity-50 font-mono tracking-widest"
                 />
               </div>
 
@@ -257,28 +257,28 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
                 <motion.div
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3"
+                  className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3"
                 >
-                  <p className="text-xs text-red-400">❌ {error}</p>
+                  <p className="text-xs text-rose-600">❌ {error}</p>
                 </motion.div>
               )}
 
               <button
                 type="submit"
                 disabled={loading || !keyInput.trim()}
-                className="w-full rounded-xl border border-yellow-500/50 bg-yellow-500/20 px-4 py-3 text-sm font-semibold text-yellow-300 transition hover:bg-yellow-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     Verifying...
                   </span>
                 ) : (
-                  "🦇 Enter Gotham"
+                  "Enter Panel"
                 )}
               </button>
 
-              <p className="text-center text-[10px] text-gray-700">
+              <p className="text-center text-[10px] text-slate-700">
                 Keys are device-locked. One key per browser only.
               </p>
             </form>
@@ -289,9 +289,9 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-6 text-center text-[10px] italic text-yellow-600/40"
+          className="mt-6 text-center text-[10px] italic text-slate-500/50"
         >
-          "I am vengeance. I am the night. I am Batman."
+          "Consistency is the key to organic growth."
         </motion.p>
       </motion.div>
     </div>
