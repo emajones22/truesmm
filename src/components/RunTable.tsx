@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { RunStep } from "../types/order";
+import { StatusPill } from "./ui";
 
-// Extended run status type
 type ExtendedRunStatus =
   | "pending"
   | "completed"
@@ -23,52 +23,14 @@ interface RunTableProps {
   mode?: "schedule" | "logs";
 }
 
-const STATUS_CONFIG: Record<
-  ExtendedRunStatus,
-  { label: string; color: string; bg: string; icon: string }
-> = {
-  completed: {
-    label: "Success",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/20",
-    icon: "✅",
-  },
-  pending: {
-    label: "Pending",
-    color: "text-blue-400",
-    bg: "bg-blue-500/20",
-    icon: "⏳",
-  },
-  retrying: {
-    label: "Retrying",
-    color: "text-yellow-400",
-    bg: "bg-yellow-500/20",
-    icon: "🔄",
-  },
-  executing: {
-    label: "Executing",
-    color: "text-purple-400",
-    bg: "bg-purple-500/20",
-    icon: "⚡",
-  },
-  cancelled: {
-    label: "Cancelled",
-    color: "text-red-400",
-    bg: "bg-red-500/20",
-    icon: "❌",
-  },
-  failed: {
-    label: "Failed",
-    color: "text-orange-400",
-    bg: "bg-orange-500/20",
-    icon: "⚠️",
-  },
-  timeout: {
-    label: "Timeout",
-    color: "text-orange-400",
-    bg: "bg-orange-500/20",
-    icon: "⏰",
-  },
+const STATUS_KIND: Record<ExtendedRunStatus, any> = {
+  completed: "completed",
+  pending: "pending",
+  retrying: "warning",
+  executing: "info",
+  cancelled: "cancelled",
+  failed: "failed",
+  timeout: "warning",
 };
 
 export function RunTable({
@@ -160,47 +122,36 @@ export function RunTable({
     };
   }, [safeRuns, safeRunStatuses, safeRunRetries]);
 
-  // ============ SCHEDULE MODE (simple preview) ============
+  // ============ SCHEDULE MODE ============
   if (mode === "schedule") {
     return (
-      <div className="mt-3 max-h-72 overflow-auto rounded-xl border border-slate-800">
-        <table className="w-full text-left text-xs text-slate-300">
-          <thead className="sticky top-0 bg-gray-900 text-slate-400">
+      <div className="max-h-72 overflow-auto rounded-lg border border-slate-200 bg-white">
+        <table className="w-full text-left text-xs">
+          <thead className="sticky top-0 bg-slate-50 text-slate-500 uppercase tracking-wider">
             <tr>
-              <th className="px-3 py-2">Run</th>
-              <th className="px-3 py-2">Time</th>
-              <th className="px-3 py-2">Views</th>
-              <th className="px-3 py-2">Likes</th>
-              <th className="px-3 py-2">Shares</th>
-              <th className="px-3 py-2">Saves</th>
-              <th className="px-3 py-2">Comments</th>
-              <th className="px-3 py-2">Reposts</th>
+              <th className="px-3 py-2 font-medium">Run</th>
+              <th className="px-3 py-2 font-medium">Time</th>
+              <th className="px-3 py-2 font-medium">Views</th>
+              <th className="px-3 py-2 font-medium">Likes</th>
+              <th className="px-3 py-2 font-medium">Shares</th>
+              <th className="px-3 py-2 font-medium">Saves</th>
+              <th className="px-3 py-2 font-medium">Comments</th>
+              <th className="px-3 py-2 font-medium">Reposts</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {safeRuns.map((run) => (
-              <tr
-                key={run.run}
-                className="border-t border-slate-800/80 align-top hover:bg-yellow-500/5"
-              >
-                <td className="px-3 py-2 text-yellow-400 font-medium">
-                  #{run.run}
+              <tr key={run.run} className="hover:bg-slate-50">
+                <td className="px-3 py-2 text-indigo-600 font-medium tabular-nums">#{run.run}</td>
+                <td className="px-3 py-2 text-slate-700">
+                  {run.at.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </td>
-                <td className="px-3 py-2 text-slate-400">
-                  {run.at.toLocaleString()}
-                </td>
-                <td className="px-3 py-2 text-yellow-400">
-                  {(run.views || 0).toLocaleString()}
-                </td>
-                <td className="px-3 py-2 text-pink-400">{run.likes || 0}</td>
-                <td className="px-3 py-2 text-blue-400">{run.shares || 0}</td>
-                <td className="px-3 py-2 text-purple-400">{run.saves || 0}</td>
-                <td className="px-3 py-2 text-green-400">
-                  {run.comments || 0}
-                </td>
-                <td className="px-3 py-2 text-cyan-400">
-                  {run.reposts || 0}
-                </td>
+                <td className="px-3 py-2 text-slate-900 font-semibold tabular-nums">{(run.views || 0).toLocaleString()}</td>
+                <td className="px-3 py-2 text-slate-700 tabular-nums">{run.likes || 0}</td>
+                <td className="px-3 py-2 text-slate-700 tabular-nums">{run.shares || 0}</td>
+                <td className="px-3 py-2 text-slate-700 tabular-nums">{run.saves || 0}</td>
+                <td className="px-3 py-2 text-slate-700 tabular-nums">{run.comments || 0}</td>
+                <td className="px-3 py-2 text-slate-700 tabular-nums">{run.reposts || 0}</td>
               </tr>
             ))}
           </tbody>
@@ -209,170 +160,110 @@ export function RunTable({
     );
   }
 
-  // ============ LOGS MODE (full detailed view) ============
+  // ============ LOGS MODE ============
   return (
-    <div className="mt-3 space-y-3">
-      {/* Stats Summary Pills */}
+    <div className="space-y-3">
+      {/* Stats summary */}
       {stats.total > 0 && (
-        <div className="flex flex-wrap gap-2 text-[10px]">
-          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-emerald-400">
-            ✅ {stats.completed} completed
-          </span>
+        <div className="flex flex-wrap gap-2 text-xs">
+          <StatusPill kind="completed" dot>{stats.completed} completed</StatusPill>
           {stats.retrying > 0 && (
-            <span className="rounded-full bg-yellow-500/20 px-2 py-0.5 text-yellow-400">
-              🔄 {stats.retrying} retrying
-            </span>
+            <StatusPill kind="warning" dot>{stats.retrying} retrying</StatusPill>
           )}
           {stats.pending > 0 && (
-            <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-blue-400">
-              ⏳ {stats.pending} pending
-            </span>
+            <StatusPill kind="pending" dot>{stats.pending} pending</StatusPill>
           )}
           {stats.cancelled > 0 && (
-            <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-red-400">
-              ❌ {stats.cancelled} cancelled
-            </span>
+            <StatusPill kind="cancelled" dot>{stats.cancelled} cancelled</StatusPill>
           )}
           {stats.failed > 0 && (
-            <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-orange-400">
-              ⚠️ {stats.failed} failed
-            </span>
+            <StatusPill kind="failed" dot>{stats.failed} failed</StatusPill>
           )}
           {stats.totalRetries > 0 && (
-            <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-orange-400">
-              ↻ {stats.totalRetries} total retries
+            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-amber-50 text-amber-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {stats.totalRetries} total retries
             </span>
           )}
         </div>
       )}
 
-      {/* Main Table */}
-      <div className="max-h-96 overflow-auto rounded-xl border border-slate-800">
-        <table className="w-full text-left text-xs text-slate-300">
-          <thead className="sticky top-0 z-10 bg-gray-900 text-slate-400">
+      {/* Main table */}
+      <div className="max-h-96 overflow-auto rounded-lg border border-slate-200 bg-white">
+        <table className="w-full text-left text-xs">
+          <thead className="sticky top-0 z-10 bg-slate-50 text-slate-500 uppercase tracking-wider">
             <tr>
-              <th className="px-3 py-2 w-12">Run</th>
-              <th className="px-3 py-2">Time</th>
-              <th className="px-3 py-2 w-20">Views</th>
-              <th className="px-3 py-2 w-14">Likes</th>
-              <th className="px-3 py-2 w-16">Shares</th>
-              <th className="px-3 py-2 w-14">Saves</th>
-              <th className="px-3 py-2 w-14">Cmts</th>
-              <th className="px-3 py-2 w-16">Reposts</th>
-              <th className="px-3 py-2 w-24">Status</th>
-              <th className="px-3 py-2 w-32">Placed At</th>
-              <th className="px-3 py-2">Info</th>
+              <th className="px-3 py-2 w-12 font-medium">#</th>
+              <th className="px-3 py-2 font-medium">Time</th>
+              <th className="px-3 py-2 w-20 font-medium">Views</th>
+              <th className="px-3 py-2 w-14 font-medium">Likes</th>
+              <th className="px-3 py-2 w-16 font-medium">Shares</th>
+              <th className="px-3 py-2 w-14 font-medium">Saves</th>
+              <th className="px-3 py-2 w-14 font-medium">Cmts</th>
+              <th className="px-3 py-2 w-16 font-medium">Reposts</th>
+              <th className="px-3 py-2 w-24 font-medium">Status</th>
+              <th className="px-3 py-2 w-32 font-medium">Placed At</th>
+              <th className="px-3 py-2 font-medium">Info</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {safeRuns.map((run, index) => {
               const status = getStatus(index);
-              const config = STATUS_CONFIG[status];
               const retryCount = safeRunRetries[index] || 0;
               const error = safeRunErrors[index];
               const reason = safeRunReasons[index];
               const timeData = getTimeDisplay(index, run.at);
+              const rowBg =
+                status === "completed" ? "bg-emerald-50/40" :
+                status === "failed" ? "bg-rose-50/40" :
+                status === "cancelled" ? "bg-slate-50/40" :
+                status === "retrying" ? "bg-amber-50/40" : "";
 
               return (
-                <tr
-                  key={run.run}
-                  className={`border-t border-slate-800/80 align-top transition-colors ${
-                    status === "retrying"
-                      ? "bg-yellow-500/5"
-                      : status === "cancelled"
-                      ? "bg-red-500/5"
-                      : status === "failed"
-                      ? "bg-orange-500/5"
-                      : status === "completed"
-                      ? "bg-emerald-500/5"
-                      : "hover:bg-yellow-500/5"
-                  }`}
-                >
-                  {/* Run Number */}
-                  <td className="px-3 py-2 font-medium text-yellow-400">
-                    #{run.run}
-                  </td>
-
-                  {/* Scheduled Time */}
+                <tr key={run.run} className={`hover:bg-slate-50 align-top ${rowBg}`}>
+                  <td className="px-3 py-2 font-medium text-indigo-600 tabular-nums">#{run.run}</td>
                   <td className="px-3 py-2">
-                    <div className="font-medium text-slate-300">
+                    <div className="font-medium text-slate-900">
                       {formatTime(run.at)}
-                      <span className="ml-1 text-slate-600 text-[10px]">
+                      <span className="ml-1 text-slate-500 text-[10px]">
                         ({formatRelativeTime(run.at)})
                       </span>
                     </div>
                     {timeData.isRescheduled && (
-                      <div className="text-[9px] text-yellow-500 mt-0.5">
-                        ↺ rescheduled from{" "}
-                        {formatTime(timeData.original)}
+                      <div className="text-[10px] text-amber-600 mt-0.5">
+                        Rescheduled from {formatTime(timeData.original)}
                       </div>
                     )}
                   </td>
-
-                  {/* Quantities */}
-                  <td className="px-3 py-2 text-yellow-400 font-medium">
-                    {(run.views || 0).toLocaleString()}
-                  </td>
-                  <td className="px-3 py-2 text-pink-400">
-                    {run.likes || 0}
-                  </td>
-                  <td className="px-3 py-2 text-blue-400">
-                    {run.shares || 0}
-                  </td>
-                  <td className="px-3 py-2 text-purple-400">
-                    {run.saves || 0}
-                  </td>
-                  <td className="px-3 py-2 text-green-400">
-                    {run.comments || 0}
-                  </td>
-                  <td className="px-3 py-2 text-cyan-400">
-                    {run.reposts || 0}
-                  </td>
-
-                  {/* Status Badge */}
+                  <td className="px-3 py-2 text-slate-900 font-semibold tabular-nums">{(run.views || 0).toLocaleString()}</td>
+                  <td className="px-3 py-2 text-slate-700 tabular-nums">{run.likes || 0}</td>
+                  <td className="px-3 py-2 text-slate-700 tabular-nums">{run.shares || 0}</td>
+                  <td className="px-3 py-2 text-slate-700 tabular-nums">{run.saves || 0}</td>
+                  <td className="px-3 py-2 text-slate-700 tabular-nums">{run.comments || 0}</td>
+                  <td className="px-3 py-2 text-slate-700 tabular-nums">{run.reposts || 0}</td>
                   <td className="px-3 py-2">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${config.bg} ${config.color}`}
-                    >
-                      <span>{config.icon}</span>
-                      <span>{config.label}</span>
-                    </span>
+                    <StatusPill kind={STATUS_KIND[status]} className="capitalize">
+                      {status}
+                    </StatusPill>
                   </td>
-
-                  {/* Placed At - actual execution time */}
                   <td className="px-3 py-2">
                     {(() => {
                       const actualTime = safeRunActualExecutedTimes[index];
                       if (actualTime) {
                         const actualDate = new Date(actualTime);
                         const scheduledDate = timeData.original;
-                        const delayMs =
-                          actualDate.getTime() - scheduledDate.getTime();
+                        const delayMs = actualDate.getTime() - scheduledDate.getTime();
                         const delayMin = Math.round(delayMs / 60000);
                         const wasDelayed = delayMin > 2;
 
                         return (
                           <div className="space-y-0.5">
-                            <p
-                              className={`text-[10px] font-medium ${
-                                wasDelayed
-                                  ? "text-yellow-400"
-                                  : "text-emerald-400"
-                              }`}
-                            >
-                              {actualDate.toLocaleString(undefined, {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                            <p className={`text-[10px] font-medium ${wasDelayed ? "text-amber-600" : "text-emerald-600"}`}>
+                              {actualDate.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                             </p>
                             {wasDelayed && (
-                              <p className="text-[9px] text-yellow-600">
-                                +{delayMin}m delay
-                                {retryCount > 0
-                                  ? ` (${retryCount} retries)`
-                                  : ""}
+                              <p className="text-[10px] text-amber-600">
+                                +{delayMin}m delay{retryCount > 0 ? ` (${retryCount} retries)` : ""}
                               </p>
                             )}
                           </div>
@@ -381,19 +272,15 @@ export function RunTable({
 
                       if (retryCount > 0) {
                         return (
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-yellow-500/20 px-2 py-0.5 text-[10px] font-medium text-yellow-400">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
                             ↻ retry {retryCount}
                           </span>
                         );
                       }
 
-                      return (
-                        <span className="text-slate-700">—</span>
-                      );
+                      return <span className="text-slate-400">—</span>;
                     })()}
                   </td>
-
-                  {/* Info / Error / Reason */}
                   <td className="px-3 py-2 max-w-[200px]">
                     {reason || error ? (
                       <div className="space-y-0.5">
@@ -401,34 +288,26 @@ export function RunTable({
                           <p
                             className={`text-[10px] truncate ${
                               reason.toLowerCase().includes("waiting")
-                                ? "text-yellow-400"
+                                ? "text-amber-600"
                                 : reason.toLowerCase().includes("timeout")
-                                ? "text-orange-400"
+                                ? "text-orange-600"
                                 : reason.toLowerCase().includes("success")
-                                ? "text-emerald-400"
-                                : "text-slate-500"
+                                ? "text-emerald-600"
+                                : "text-slate-600"
                             }`}
                             title={reason}
                           >
-                            {reason.length > 40
-                              ? `${reason.slice(0, 40)}...`
-                              : reason}
+                            {reason.length > 40 ? `${reason.slice(0, 40)}…` : reason}
                           </p>
                         )}
                         {error && !reason?.includes(error) && (
-                          <p
-                            className="text-[10px] text-rose-400 truncate"
-                            title={error}
-                          >
-                            ⚠️{" "}
-                            {error.length > 35
-                              ? `${error.slice(0, 35)}...`
-                              : error}
+                          <p className="text-[10px] text-rose-600 truncate" title={error}>
+                            {error.length > 35 ? `${error.slice(0, 35)}…` : error}
                           </p>
                         )}
                       </div>
                     ) : (
-                      <span className="text-slate-700">—</span>
+                      <span className="text-slate-400">—</span>
                     )}
                   </td>
                 </tr>
@@ -439,31 +318,13 @@ export function RunTable({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 text-[9px] text-slate-600 pt-1">
-        <span>Legend:</span>
-        <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          Completed
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-blue-500" />
-          Pending
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-          Retrying
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-red-500" />
-          Cancelled
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="text-yellow-400">Yellow time</span> = Rescheduled
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="text-yellow-400">Placed At</span> = Actual
-          execution (yellow = delayed)
-        </span>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+        <span>Status:</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" />Completed</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-400" />Pending</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />Retrying</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />Failed</span>
+        <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-slate-400" />Cancelled</span>
       </div>
     </div>
   );
