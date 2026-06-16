@@ -6,7 +6,7 @@ import { LoginPage } from "./pages/LoginPage.tsx";
 import { AdminPage } from "./pages/AdminPage.tsx";
 import { supabase } from "./lib/supabase.ts";
 
-const STORAGE_KEY = "gotham-access-key";
+const STORAGE_KEY = "truesmm-access-key";
 
 function useHash(): string {
   const [hash, setHash] = useState<string>(
@@ -78,12 +78,12 @@ function Root() {
 
   if (authState === "loading") {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <span className="text-5xl">🦇</span>
+          <span className="text-5xl">🚀</span>
           <div className="mt-4 flex items-center justify-center gap-2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
-            <span className="text-sm text-yellow-600">Initializing Gotham...</span>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            <span className="text-sm text-slate-500">Initializing TRUESMM...</span>
           </div>
         </div>
       </div>
