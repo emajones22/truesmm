@@ -1,24 +1,26 @@
 @import "tailwindcss";
 
 /* ========================================== */
-/* 🦇 BATMAN / GOTHAM THEME - GLOBAL STYLES  */
+/* LIGHT / ORGANIC THEME - GLOBAL STYLES      */
 /* ========================================== */
 
 :root {
-  color-scheme: dark;
-  
-  /* Batman Color Palette */
-  --bat-yellow: #eab308;
-  --bat-gold: #facc15;
-  --bat-amber: #f59e0b;
-  --bat-black: #000000;
-  --bat-dark: #0a0a0a;
-  --bat-gray-900: #111111;
-  --bat-gray-800: #1a1a1a;
-  --bat-gray-700: #2a2a2a;
-  --bat-gray-600: #3a3a3a;
-  --bat-gray-500: #6b7280;
-  --bat-gray-400: #9ca3af;
+  color-scheme: light;
+
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #3b82f6;
+  --primary-soft: #eff6ff;
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
 }
 
 /* ========================================== */
@@ -28,14 +30,9 @@
 body {
   margin: 0;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  background: #000000;
-  color: #e5e7eb;
+  background: #ffffff;
+  color: #0f172a;
   min-height: 100vh;
-  
-  /* Subtle Gotham atmosphere */
-  background-image: 
-    radial-gradient(ellipse at top, rgba(234, 179, 8, 0.015) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, rgba(234, 179, 8, 0.01) 0%, transparent 40%);
 }
 
 * {
@@ -43,7 +40,7 @@ body {
 }
 
 /* ========================================== */
-/* 🦇 BATMAN SCROLLBAR                        */
+/* SCROLLBAR                                  */
 /* ========================================== */
 
 ::-webkit-scrollbar {
@@ -52,28 +49,27 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
-  border-left: 1px solid rgba(234, 179, 8, 0.1);
+  background: #f8fafc;
+  border-left: 1px solid #e2e8f0;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #eab308 0%, #ca8a04 100%);
+  background: #cbd5e1;
   border-radius: 9999px;
-  border: 2px solid #000000;
+  border: 2px solid #f8fafc;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #facc15 0%, #eab308 100%);
+  background: #94a3b8;
 }
 
 ::-webkit-scrollbar-corner {
-  background: #000000;
+  background: #f8fafc;
 }
 
-/* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #eab308 #000000;
+  scrollbar-color: #cbd5e1 #f8fafc;
 }
 
 /* ========================================== */
@@ -81,90 +77,79 @@ body {
 /* ========================================== */
 
 ::selection {
-  background-color: rgba(234, 179, 8, 0.3);
-  color: #facc15;
+  background-color: rgba(37, 99, 235, 0.2);
+  color: #1d4ed8;
 }
 
 ::-moz-selection {
-  background-color: rgba(234, 179, 8, 0.3);
-  color: #facc15;
+  background-color: rgba(37, 99, 235, 0.2);
+  color: #1d4ed8;
 }
 
 /* ========================================== */
-/* 🦇 GLOWING EFFECTS                         */
+/* GLOWING EFFECTS (kept for compatibility)   */
 /* ========================================== */
 
-/* Yellow glow on hover */
 .bat-glow {
   transition: all 0.3s ease;
 }
 
 .bat-glow:hover {
-  box-shadow: 
-    0 0 20px rgba(234, 179, 8, 0.3),
-    0 0 40px rgba(234, 179, 8, 0.15),
-    0 0 60px rgba(234, 179, 8, 0.05);
-  border-color: rgba(234, 179, 8, 0.5) !important;
+  box-shadow:
+    0 0 20px rgba(37, 99, 235, 0.15),
+    0 0 40px rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.4) !important;
 }
 
-/* Text glow effect */
 .bat-text-glow {
-  text-shadow: 
-    0 0 10px rgba(234, 179, 8, 0.5),
-    0 0 20px rgba(234, 179, 8, 0.3),
-    0 0 30px rgba(234, 179, 8, 0.2);
+  text-shadow: 0 0 12px rgba(37, 99, 235, 0.25);
 }
 
-/* Card hover glow */
 .bat-card {
   transition: all 0.3s ease;
 }
 
 .bat-card:hover {
-  box-shadow: 0 0 30px rgba(234, 179, 8, 0.1);
-  border-color: rgba(234, 179, 8, 0.4) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border-color: rgba(37, 99, 235, 0.3) !important;
   transform: translateY(-2px);
 }
 
-/* Intense glow for important elements */
 .bat-glow-intense {
-  box-shadow: 
-    0 0 10px rgba(234, 179, 8, 0.4),
-    0 0 20px rgba(234, 179, 8, 0.2),
-    inset 0 0 10px rgba(234, 179, 8, 0.1);
+  box-shadow:
+    0 0 10px rgba(37, 99, 235, 0.25),
+    0 0 20px rgba(37, 99, 235, 0.15),
+    inset 0 0 10px rgba(37, 99, 235, 0.08);
 }
 
 /* ========================================== */
-/* 🦇 BATMAN ANIMATIONS                       */
+/* ANIMATIONS                                 */
 /* ========================================== */
 
-/* Bat pulse animation */
 @keyframes bat-pulse {
   0%, 100% {
     opacity: 1;
     transform: scale(1);
   }
   50% {
-    opacity: 0.7;
-    transform: scale(1.05);
+    opacity: 0.85;
+    transform: scale(1.03);
   }
 }
 
-/* Floating animation */
 @keyframes bat-float {
   0%, 100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-6px);
   }
 }
 
-/* Bat signal animation */
 @keyframes bat-signal {
   0%, 100% {
-    opacity: 0.4;
-    transform: scale(0.95);
+    opacity: 0.6;
+    transform: scale(0.98);
   }
   50% {
     opacity: 1;
@@ -172,27 +157,24 @@ body {
   }
 }
 
-/* Glow pulse animation */
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(234, 179, 8, 0.3);
+    box-shadow: 0 0 5px rgba(37, 99, 235, 0.2);
   }
   50% {
-    box-shadow: 0 0 20px rgba(234, 179, 8, 0.5), 0 0 30px rgba(234, 179, 8, 0.3);
+    box-shadow: 0 0 15px rgba(37, 99, 235, 0.35);
   }
 }
 
-/* Flicker animation (like broken Gotham lights) */
 @keyframes flicker {
   0%, 100% { opacity: 1; }
   41% { opacity: 1; }
-  42% { opacity: 0.8; }
+  42% { opacity: 0.85; }
   43% { opacity: 1; }
-  45% { opacity: 0.3; }
+  45% { opacity: 0.6; }
   46% { opacity: 1; }
 }
 
-/* Slide in from right */
 @keyframes slide-in-right {
   from {
     transform: translateX(100%);
@@ -204,7 +186,6 @@ body {
   }
 }
 
-/* Fade in up */
 @keyframes fade-in-up {
   from {
     transform: translateY(20px);
@@ -216,7 +197,6 @@ body {
   }
 }
 
-/* Animation classes */
 .animate-bat-pulse {
   animation: bat-pulse 2s ease-in-out infinite;
 }
@@ -246,36 +226,34 @@ body {
 }
 
 /* ========================================== */
-/* 🦇 GOTHAM BACKGROUNDS                      */
+/* BACKGROUNDS                                */
 /* ========================================== */
 
 .gotham-bg {
-  background-color: #000000;
-  background-image: 
-    radial-gradient(ellipse at top, rgba(234, 179, 8, 0.02) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom, rgba(0, 0, 0, 1) 0%, transparent 50%);
+  background-color: #f8fafc;
+  background-image:
+    radial-gradient(ellipse at top, rgba(37, 99, 235, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(255, 255, 255, 1) 0%, transparent 50%);
 }
 
 .gotham-grid {
-  background-image: 
-    linear-gradient(rgba(234, 179, 8, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(234, 179, 8, 0.02) 1px, transparent 1px);
+  background-image:
+    linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
-/* Gotham night sky gradient */
 .gotham-sky {
   background: linear-gradient(
     180deg,
-    #000000 0%,
-    #0a0a0a 30%,
-    #111111 60%,
-    #000000 100%
+    #f8fafc 0%,
+    #ffffff 50%,
+    #f8fafc 100%
   );
 }
 
 /* ========================================== */
-/* 🦇 FOCUS STATES                            */
+/* FOCUS STATES                               */
 /* ========================================== */
 
 *:focus {
@@ -283,19 +261,19 @@ body {
 }
 
 *:focus-visible {
-  outline: 2px solid rgba(234, 179, 8, 0.5);
+  outline: 2px solid rgba(37, 99, 235, 0.4);
   outline-offset: 2px;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: rgba(234, 179, 8, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.15);
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 /* ========================================== */
-/* 🦇 BUTTON STYLES                           */
+/* BUTTON STYLES                              */
 /* ========================================== */
 
 button {
@@ -312,39 +290,38 @@ button:disabled {
 }
 
 /* ========================================== */
-/* 🦇 LINK STYLES                             */
+/* LINK STYLES                                */
 /* ========================================== */
 
 a {
-  color: #eab308;
+  color: #2563eb;
   text-decoration: none;
   transition: all 0.2s ease;
 }
 
 a:hover {
-  color: #facc15;
-  text-shadow: 0 0 10px rgba(234, 179, 8, 0.3);
+  color: #1d4ed8;
 }
 
 /* ========================================== */
-/* 🦇 INPUT PLACEHOLDER                       */
+/* INPUT PLACEHOLDER                          */
 /* ========================================== */
 
 ::placeholder {
-  color: #4b5563;
+  color: #94a3b8;
   opacity: 1;
 }
 
 :-ms-input-placeholder {
-  color: #4b5563;
+  color: #94a3b8;
 }
 
 ::-ms-input-placeholder {
-  color: #4b5563;
+  color: #94a3b8;
 }
 
 /* ========================================== */
-/* 🦇 TABLE STYLES                            */
+/* TABLE STYLES                               */
 /* ========================================== */
 
 table {
@@ -361,7 +338,7 @@ tr {
 }
 
 /* ========================================== */
-/* 🦇 CUSTOM RANGE SLIDER                     */
+/* CUSTOM RANGE SLIDER                        */
 /* ========================================== */
 
 input[type="range"] {
@@ -373,7 +350,7 @@ input[type="range"] {
 
 input[type="range"]::-webkit-slider-track {
   height: 8px;
-  background: #1f2937;
+  background: #e2e8f0;
   border-radius: 9999px;
 }
 
@@ -382,43 +359,43 @@ input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 20px;
   height: 20px;
-  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-radius: 50%;
   margin-top: -6px;
-  box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
   transition: all 0.2s ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 15px rgba(234, 179, 8, 0.7);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
 }
 
 input[type="range"]::-moz-range-track {
   height: 8px;
-  background: #1f2937;
+  background: #e2e8f0;
   border-radius: 9999px;
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 20px;
   height: 20px;
-  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-radius: 50%;
   border: none;
-  box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.3);
 }
 
 /* ========================================== */
-/* 🦇 CHECKBOX & TOGGLE STYLES                */
+/* CHECKBOX & TOGGLE STYLES                   */
 /* ========================================== */
 
 input[type="checkbox"] {
-  accent-color: #eab308;
+  accent-color: #2563eb;
 }
 
 /* ========================================== */
-/* 🦇 NUMBER INPUT ARROWS                     */
+/* NUMBER INPUT ARROWS                        */
 /* ========================================== */
 
 input[type="number"]::-webkit-inner-spin-button,
@@ -432,12 +409,12 @@ input[type="number"]:hover::-webkit-outer-spin-button {
 }
 
 /* ========================================== */
-/* 🦇 SELECT DROPDOWN                         */
+/* SELECT DROPDOWN                              */
 /* ========================================== */
 
 select {
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23eab308' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232563eb' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
@@ -447,13 +424,13 @@ select {
 }
 
 select option {
-  background: #000000;
-  color: #e5e7eb;
+  background: #ffffff;
+  color: #0f172a;
   padding: 8px;
 }
 
 /* ========================================== */
-/* 🦇 MODAL BACKDROP                          */
+/* MODAL BACKDROP                             */
 /* ========================================== */
 
 .modal-backdrop {
@@ -462,7 +439,7 @@ select option {
 }
 
 /* ========================================== */
-/* 🦇 TOAST NOTIFICATIONS                     */
+/* TOAST NOTIFICATIONS                        */
 /* ========================================== */
 
 .toast-enter {
@@ -474,15 +451,15 @@ select option {
 }
 
 /* ========================================== */
-/* 🦇 LOADING STATES                          */
+/* LOADING STATES                             */
 /* ========================================== */
 
 .loading-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(234, 179, 8, 0.05) 0%,
-    rgba(234, 179, 8, 0.1) 50%,
-    rgba(234, 179, 8, 0.05) 100%
+    rgba(226, 232, 240, 0.4) 0%,
+    rgba(241, 245, 249, 0.8) 50%,
+    rgba(226, 232, 240, 0.4) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -498,7 +475,7 @@ select option {
 }
 
 /* ========================================== */
-/* 🦇 PROGRESS BAR                            */
+/* PROGRESS BAR                               */
 /* ========================================== */
 
 .progress-bar {
@@ -506,7 +483,7 @@ select option {
 }
 
 /* ========================================== */
-/* 🦇 TOOLTIP                                 */
+/* TOOLTIP                                    */
 /* ========================================== */
 
 [data-tooltip] {
@@ -520,11 +497,11 @@ select option {
   left: 50%;
   transform: translateX(-50%);
   padding: 6px 12px;
-  background: #000000;
-  border: 1px solid rgba(234, 179, 8, 0.3);
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   font-size: 12px;
-  color: #facc15;
+  color: #f8fafc;
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
@@ -539,7 +516,7 @@ select option {
 }
 
 /* ========================================== */
-/* 🦇 CARD SHINE EFFECT                       */
+/* CARD SHINE EFFECT                          */
 /* ========================================== */
 
 .card-shine {
@@ -557,7 +534,7 @@ select option {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(234, 179, 8, 0.1),
+    rgba(37, 99, 235, 0.06),
     transparent
   );
   transition: left 0.5s ease;
@@ -568,7 +545,7 @@ select option {
 }
 
 /* ========================================== */
-/* 🦇 RESPONSIVE HELPERS                      */
+/* RESPONSIVE HELPERS                         */
 /* ========================================== */
 
 @media (max-width: 768px) {
@@ -579,7 +556,7 @@ select option {
 }
 
 /* ========================================== */
-/* 🦇 PRINT STYLES                            */
+/* PRINT STYLES                               */
 /* ========================================== */
 
 @media print {
@@ -587,14 +564,14 @@ select option {
     background: white;
     color: black;
   }
-  
+
   .no-print {
     display: none !important;
   }
 }
 
 /* ========================================== */
-/* 🦇 REDUCED MOTION                          */
+/* REDUCED MOTION                             */
 /* ========================================== */
 
 @media (prefers-reduced-motion: reduce) {
@@ -608,7 +585,7 @@ select option {
 }
 
 /* ========================================== */
-/* 🦇 UTILITY CLASSES                         */
+/* UTILITY CLASSES                            */
 /* ========================================== */
 
 .no-scrollbar::-webkit-scrollbar {
@@ -621,7 +598,7 @@ select option {
 }
 
 .text-gradient-gold {
-  background: linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -629,10 +606,10 @@ select option {
 
 .border-gradient-gold {
   border: 1px solid transparent;
-  background: linear-gradient(#000, #000) padding-box,
-              linear-gradient(135deg, #facc15, #eab308) border-box;
+  background: linear-gradient(#fff, #fff) padding-box,
+              linear-gradient(135deg, #3b82f6, #2563eb) border-box;
 }
 
 /* ========================================== */
-/* 🦇 END OF BATMAN THEME                     */
+/* END OF LIGHT THEME                         */
 /* ========================================== */
