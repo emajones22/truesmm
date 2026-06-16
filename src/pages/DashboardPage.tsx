@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import type { CreatedOrder } from "../types/order";
+import { Card, StatCard, StatusPill, SectionHeader, EmptyState, Tabs } from "../components/ui";
 
 interface DashboardPageProps {
   orders: CreatedOrder[];
@@ -7,9 +8,15 @@ interface DashboardPageProps {
 
 type TimePeriod = "today" | "week" | "month" | "all";
 
+const PERIOD_TABS = [
+  { key: "today" as const, label: "Today" },
+  { key: "week" as const, label: "7 Days" },
+  { key: "month" as const, label: "30 Days" },
+  { key: "all" as const, label: "All Time" },
+];
+
 export function DashboardPage({ orders }: DashboardPageProps) {
   const [period, setPeriod] = useState<TimePeriod>("all");
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   function getRealStatus(order: CreatedOrder): string {
     const runs = order.runs || [];
@@ -145,246 +152,175 @@ export function DashboardPage({ orders }: DashboardPageProps) {
       .slice(0, 5);
   }, [orders]);
 
-  const getStatusColor = (order: CreatedOrder) => {
-    const status = getRealStatus(order);
-    switch (status) {
-      case "running":
-      case "processing": return "text-blue-600";
-      case "completed": return "text-emerald-600";
-      case "paused": return "text-orange-600";
-      case "scheduled": return "text-blue-600";
-      case "failed":
-      case "cancelled": return "text-rose-600";
-      default: return "text-slate-500";
-    }
-  };
-
-  const getStatusBg = (order: CreatedOrder) => {
-    const status = getRealStatus(order);
-    switch (status) {
-      case "running":
-      case "processing": return "bg-blue-100";
-      case "completed": return "bg-emerald-100";
-      case "paused": return "bg-orange-100";
-      case "scheduled": return "bg-blue-100";
-      case "failed":
-      case "cancelled": return "bg-rose-100";
-      default: return "bg-slate-200";
-    }
-  };
-
-  const getStatusIcon = (order: CreatedOrder) => {
-    const status = getRealStatus(order);
-    switch (status) {
-      case "running":
-      case "processing": return "⚡";
-      case "completed": return "✅";
-      case "paused": return "⏸️";
-      case "scheduled": return "📅";
-      case "failed":
-      case "cancelled": return "❌";
-      default: return "📦";
-    }
-  };
-
-  const handleClearOrders = () => {
-    localStorage.removeItem("dev-smm-orders");
-    window.location.reload();
-  };
+  const periodLabel = {
+    today: "Today",
+    week: "Last 7 days",
+    month: "Last 30 days",
+    all: "All time",
+  }[period];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 px-3 py-4 sm:px-6 sm:py-7">
-
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-2xl sm:text-3xl">🦇</span>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-blue-600">
-              Gotham Command
-            </h2>
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            Monitoring all operations across the city
-          </p>
-        </div>
-
-        {/* Time Period Filter */}
-        <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 self-start sm:self-auto">
-          {[
-            { key: "today", label: "Today" },
-            { key: "week", label: "7D" },
-            { key: "month", label: "30D" },
-            { key: "all", label: "All" },
-          ].map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setPeriod(item.key as TimePeriod)}
-              className={`rounded-md px-2 py-1.5 text-xs font-medium transition sm:px-3 ${
-                period === item.key
-                  ? "bg-blue-100 text-blue-600"
-                  : "text-slate-500 hover:text-blue-700"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-        {/* Total Orders */}
-        <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wide text-slate-500">
-              Total
-            </p>
-            <span className="text-lg sm:text-xl">📦</span>
-          </div>
-          <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold text-slate-900">{stats.total}</p>
-          <p className="mt-1 text-[10px] sm:text-xs text-slate-600">
-            {period === "today" && "Today"}
-            {period === "week" && "Last 7 days"}
-            {period === "month" && "Last 30 days"}
-            {period === "all" && "All time"}
-          </p>
-        </div>
-
-        {/* Running Orders */}
-        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-blue-50 to-white p-3 sm:p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wide text-blue-600">
-              Active
-            </p>
-            <span className="text-lg sm:text-xl">⚡</span>
-          </div>
-          <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold text-blue-600">{stats.running}</p>
-          <div className="mt-1 sm:mt-2 flex items-center gap-1">
-            {stats.running > 0 ? (
-              <>
-                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-600" />
-                <p className="text-[10px] sm:text-xs text-blue-700/80">In progress</p>
-              </>
-            ) : (
-              <p className="text-[10px] sm:text-xs text-blue-700/80">None active</p>
-            )}
-          </div>
-        </div>
-
-        {/* Scheduled Orders */}
-        <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-3 sm:p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wide text-blue-700">
-              Scheduled
-            </p>
-            <span className="text-lg sm:text-xl">📅</span>
-          </div>
-          <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold text-blue-600">{stats.scheduled}</p>
-          <p className="mt-1 text-[10px] sm:text-xs text-blue-700/80">Awaiting deploy</p>
-        </div>
-
-        {/* Completed Orders */}
-        <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-3 sm:p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wide text-emerald-700">
-              Done
-            </p>
-            <span className="text-lg sm:text-xl">✅</span>
-          </div>
-          <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold text-emerald-600">{stats.completed}</p>
-          <p className="mt-1 text-[10px] sm:text-xs text-emerald-700/80">Accomplished</p>
-        </div>
-
-        {/* Failed Orders */}
-        <div className="col-span-2 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50 to-white p-3 sm:p-5 lg:col-span-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] sm:text-xs font-medium uppercase tracking-wide text-rose-700">
-              Failed
-            </p>
-            <span className="text-lg sm:text-xl">❌</span>
-          </div>
-          <p className="mt-2 sm:mt-3 text-2xl sm:text-3xl font-bold text-rose-600">{stats.failed}</p>
-          <p className="mt-1 text-[10px] sm:text-xs text-rose-700/80">Needs attention</p>
-        </div>
-      </div>
-
-      {/* Success Rate Bar */}
-      <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 sm:p-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs sm:text-sm font-medium text-blue-600">🎯 Mission Success Rate</h3>
-          <span className={`text-xl sm:text-2xl font-bold ${
-            stats.successRate >= 70 ? "text-emerald-600" :
-            stats.successRate >= 40 ? "text-blue-600" : "text-rose-600"
-          }`}>
-            {stats.successRate}%
-          </span>
-        </div>
-        <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-100">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              stats.successRate >= 70 ? "bg-emerald-600" :
-              stats.successRate >= 40 ? "bg-blue-600" : "bg-rose-600"
-            }`}
-            style={{ width: `${stats.successRate}%` }}
+      <SectionHeader
+        eyebrow="Overview"
+        title="Dashboard"
+        description="Monitor your campaigns and engagement metrics."
+        actions={
+          <Tabs
+            tabs={PERIOD_TABS}
+            active={period}
+            onChange={(key) => setPeriod(key as TimePeriod)}
           />
-        </div>
-        <div className="mt-2 flex justify-between text-xs text-slate-500">
-          <span>{stats.completed} successful</span>
-          <span>{stats.failed} failed</span>
-        </div>
+        }
+      />
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Total Orders"
+          value={stats.total}
+          hint={periodLabel}
+          icon={
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          }
+          tone="brand"
+        />
+        <StatCard
+          label="Active"
+          value={stats.running}
+          hint={stats.running > 0 ? "In progress" : "None active"}
+          icon={
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          }
+          tone="info"
+        />
+        <StatCard
+          label="Scheduled"
+          value={stats.scheduled}
+          hint="Awaiting deploy"
+          icon={
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          }
+          tone="neutral"
+        />
+        <StatCard
+          label="Completed"
+          value={stats.completed}
+          hint="Successfully delivered"
+          icon={
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+          tone="success"
+        />
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-
-        {/* Orders Chart */}
-        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h3 className="text-xs sm:text-sm font-medium text-blue-600">📈 Night Patrol Activity</h3>
-          <div className="mt-4 sm:mt-5 flex h-32 sm:h-40 items-end justify-between gap-1 sm:gap-2">
-            {chartData.days.map((day, index) => {
-              const height = chartData.maxCount > 0 ? (day.count / chartData.maxCount) * 100 : 0;
-              const isToday = index === chartData.days.length - 1;
-              return (
-                <div key={day.label} className="flex flex-1 flex-col items-center gap-1 sm:gap-2">
-                  <span className="text-[10px] text-slate-500">{day.count}</span>
-                  <div className="relative w-full flex-1">
-                    <div
-                      className={`absolute bottom-0 w-full rounded-t-md transition-all duration-500 ${
-                        isToday ? "bg-blue-600" : "bg-slate-200"
-                      }`}
-                      style={{ height: `${Math.max(height, 4)}%` }}
-                    />
-                  </div>
-                  <span className={`text-[10px] ${isToday ? "text-blue-600 font-medium" : "text-slate-600"}`}>
-                    {day.label}
-                  </span>
-                </div>
-              );
-            })}
+      {/* Success rate + failed row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card padding="md" className="lg:col-span-2">
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <p className="text-sm font-medium text-slate-700">Success rate</p>
+              <p className="text-xs text-slate-500 mt-0.5">Completed vs total orders</p>
+            </div>
+            <p className={`text-3xl font-bold ${
+              stats.successRate >= 70 ? "text-emerald-600" :
+              stats.successRate >= 40 ? "text-amber-600" : "text-rose-600"
+            }`}>
+              {stats.successRate}%
+            </p>
           </div>
-        </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${
+                stats.successRate >= 70 ? "bg-emerald-500" :
+                stats.successRate >= 40 ? "bg-amber-500" : "bg-rose-500"
+              }`}
+              style={{ width: `${stats.successRate}%` }}
+            />
+          </div>
+          <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+            <span><span className="font-semibold text-emerald-600">{stats.completed}</span> completed</span>
+            <span><span className="font-semibold text-rose-600">{stats.failed}</span> failed</span>
+          </div>
+        </Card>
 
-        {/* Services Breakdown */}
-        <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <h3 className="text-xs sm:text-sm font-medium text-blue-600">🦇 Arsenal Breakdown</h3>
-          <div className="mt-4 sm:mt-5 space-y-3 sm:space-y-4">
+        <Card padding="md">
+          <p className="text-sm font-medium text-slate-700">Failed</p>
+          <p className="text-xs text-slate-500 mt-0.5">Needs attention</p>
+          <p className="mt-3 text-3xl font-bold text-rose-600">{stats.failed}</p>
+          {stats.failed > 0 && (
+            <p className="mt-2 text-xs text-rose-600 font-medium">Review cancelled or rejected orders</p>
+          )}
+        </Card>
+      </div>
+
+      {/* Activity + Services breakdown */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card padding="md">
+          <div className="mb-4">
+            <p className="text-sm font-medium text-slate-700">Activity</p>
+            <p className="text-xs text-slate-500 mt-0.5">Orders created in the last 7 days</p>
+          </div>
+          {chartData.days.every((d) => d.count === 0) ? (
+            <div className="h-40 flex items-center justify-center text-sm text-slate-500">
+              No activity in the last 7 days
+            </div>
+          ) : (
+            <div className="flex h-40 items-end justify-between gap-2">
+              {chartData.days.map((day, index) => {
+                const height = chartData.maxCount > 0 ? (day.count / chartData.maxCount) * 100 : 0;
+                const isToday = index === chartData.days.length - 1;
+                return (
+                  <div key={day.label} className="flex flex-1 flex-col items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-700">{day.count}</span>
+                    <div className="relative w-full flex-1 flex items-end">
+                      <div
+                        className={`w-full rounded-t-md transition-all duration-500 ${
+                          isToday ? "bg-indigo-500" : "bg-slate-200"
+                        }`}
+                        style={{ height: `${Math.max(height, 6)}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs ${isToday ? "text-indigo-600 font-semibold" : "text-slate-500"}`}>
+                      {day.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        <Card padding="md">
+          <div className="mb-4">
+            <p className="text-sm font-medium text-slate-700">Engagement breakdown</p>
+            <p className="text-xs text-slate-500 mt-0.5">Total interactions delivered</p>
+          </div>
+          <div className="space-y-3">
             {[
-              { label: "👁️ Views", data: servicesBreakdown.views, color: "bg-blue-600" },
-              { label: "❤️ Likes", data: servicesBreakdown.likes, color: "bg-blue-700" },
-              { label: "🔄 Shares", data: servicesBreakdown.shares, color: "bg-blue-800" },
-              { label: "🔖 Saves", data: servicesBreakdown.saves, color: "bg-amber-600" },
-              { label: "🔁 Reposts", data: servicesBreakdown.reposts, color: "bg-cyan-600" },
+              { label: "Views", data: servicesBreakdown.views, color: "bg-indigo-500" },
+              { label: "Likes", data: servicesBreakdown.likes, color: "bg-pink-500" },
+              { label: "Shares", data: servicesBreakdown.shares, color: "bg-sky-500" },
+              { label: "Saves", data: servicesBreakdown.saves, color: "bg-violet-500" },
+              { label: "Reposts", data: servicesBreakdown.reposts, color: "bg-cyan-500" },
             ].map((item) => (
               <div key={item.label}>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">{item.label}</span>
-                  <span className="text-slate-500">
-                    {item.data.count.toLocaleString()} ({item.data.percent}%)
+                <div className="flex items-center justify-between text-sm mb-1.5">
+                  <span className="text-slate-700">{item.label}</span>
+                  <span className="text-slate-500 tabular-nums">
+                    {item.data.count.toLocaleString()} <span className="text-slate-400">({item.data.percent}%)</span>
                   </span>
                 </div>
-                <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${item.color}`}
                     style={{ width: `${item.data.percent}%` }}
@@ -392,131 +328,100 @@ export function DashboardPage({ orders }: DashboardPageProps) {
                 </div>
               </div>
             ))}
-
-            <div className="mt-3 sm:mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
-              <p className="text-xs text-slate-500">Total Engagements</p>
-              <p className="text-lg sm:text-xl font-bold text-blue-600">
-                {servicesBreakdown.total.toLocaleString()}
-              </p>
-            </div>
           </div>
-        </div>
+          <div className="mt-4 rounded-lg bg-slate-50 px-4 py-3 flex items-center justify-between">
+            <span className="text-sm text-slate-600">Total engagement</span>
+            <span className="text-lg font-bold text-slate-900 tabular-nums">
+              {servicesBreakdown.total.toLocaleString()}
+            </span>
+          </div>
+        </Card>
       </div>
 
       {/* Recent Orders */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs sm:text-sm font-medium text-blue-600">⏰ Recent Missions</h3>
-          <span className="text-[10px] sm:text-xs text-slate-600">Last 5 operations</span>
+      <Card padding="none">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Recent orders</p>
+            <p className="text-xs text-slate-500 mt-0.5">Last 5 orders</p>
+          </div>
         </div>
 
         {recentOrders.length === 0 ? (
-          <div className="mt-5 rounded-lg border border-dashed border-slate-200 py-8 text-center">
-            <span className="text-4xl">🦇</span>
-            <p className="mt-2 text-sm text-slate-500">No missions deployed yet</p>
-            <p className="mt-1 text-xs text-slate-600">The night is quiet... for now</p>
+          <div className="p-6">
+            <EmptyState
+              icon={
+                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              }
+              title="No orders yet"
+              description="Once you create your first campaign, it will appear here."
+            />
           </div>
         ) : (
-          <div className="mt-4 space-y-2">
+          <div className="divide-y divide-slate-200">
             {recentOrders.map((order) => {
               const realStatus = getRealStatus(order);
+              const statusKind = realStatus as any;
               return (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white/90 p-2.5 sm:p-3 transition hover:border-slate-200"
+                  className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <span className={`inline-flex h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0 items-center justify-center rounded-full text-sm ${getStatusBg(order)}`}>
-                      {getStatusIcon(order)}
-                    </span>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                      <svg className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                    </div>
                     <div className="min-w-0">
-                      <p className="truncate text-xs sm:text-sm font-medium text-slate-900">
-                        {order.name || `Mission #${order.id.slice(0, 8)}`}
+                      <p className="truncate text-sm font-medium text-slate-900">
+                        {order.name || `Order #${order.id.slice(0, 8)}`}
                       </p>
-                      <p className="text-[10px] sm:text-xs text-slate-600">
-                        {new Date(order.createdAt).toLocaleDateString()}
+                      <p className="text-xs text-slate-500">
+                        {new Date(order.createdAt).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                        {" · "}
+                        {order.runs?.length || 0} runs
                       </p>
                     </div>
                   </div>
-                  <div className="flex-shrink-0 text-right">
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-medium capitalize ${getStatusBg(order)} ${getStatusColor(order)}`}>
-                      {realStatus}
-                    </span>
-                    <p className="mt-1 text-[10px] text-slate-600">
-                      {order.runs?.length || 0} runs
-                    </p>
-                  </div>
+                  <StatusPill kind={statusKind} className="capitalize">
+                    {realStatus}
+                  </StatusPill>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </Card>
 
-      {/* Quick Stats Footer */}
+      {/* Quick stats footer */}
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 text-center">
-          <p className="text-[10px] sm:text-xs text-slate-500">Avg Runs/Mission</p>
-          <p className="mt-1 text-lg sm:text-xl font-bold text-blue-600">
+        <Card padding="md" className="text-center">
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Avg Runs / Mission</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">
             {filteredOrders.length > 0
               ? Math.round(filteredOrders.reduce((sum, o) => sum + (o.runs?.length || 0), 0) / filteredOrders.length)
               : 0}
           </p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 text-center">
-          <p className="text-[10px] sm:text-xs text-slate-500">Total Runs</p>
-          <p className="mt-1 text-lg sm:text-xl font-bold text-slate-900">
+        </Card>
+        <Card padding="md" className="text-center">
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Total Runs</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">
             {filteredOrders.reduce((sum, o) => sum + (o.runs?.length || 0), 0)}
           </p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-3 sm:p-4 text-center">
-          <p className="text-[10px] sm:text-xs text-slate-500">Completed Runs</p>
-          <p className="mt-1 text-lg sm:text-xl font-bold text-emerald-600">
+        </Card>
+        <Card padding="md" className="text-center">
+          <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Completed Runs</p>
+          <p className="mt-2 text-2xl font-bold text-emerald-600 tabular-nums">
             {filteredOrders.reduce((sum, o) => sum + (o.completedRuns || 0), 0)}
           </p>
-        </div>
-      </div>
-
-      {/* Clear Orders Button */}
-      <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-xs sm:text-sm font-medium text-orange-700">🧹 Clear Orders</h3>
-            <p className="mt-1 text-[10px] sm:text-xs text-orange-600/80">
-              Delete all orders for a fresh start.
-              <br />
-              <span className="text-emerald-600">✓ APIs and Bundles will be kept safe!</span>
-            </p>
-          </div>
-
-          {!showClearConfirm ? (
-            <button
-              type="button"
-              onClick={() => setShowClearConfirm(true)}
-              className="self-start rounded-lg border border-orange-300 bg-orange-50 px-4 py-2 text-xs sm:text-sm font-medium text-orange-800 transition hover:bg-orange-100 sm:self-auto"
-            >
-              🗑️ Clear Orders
-            </button>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-orange-700">Are you sure?</span>
-              <button
-                type="button"
-                onClick={handleClearOrders}
-                className="rounded-lg border border-rose-600 bg-rose-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-rose-700"
-              >
-                ✓ Yes, Delete
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowClearConfirm(false)}
-                className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-200"
-              >
-                ✕ Cancel
-              </button>
-            </div>
-          )}
-        </div>
+        </Card>
       </div>
     </div>
   );
