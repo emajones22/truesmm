@@ -32,7 +32,7 @@ interface BundlesPageProps {
 
 export function BundlesPage({ apis, bundles, onAddBundle, onUpdateBundle, onDeleteBundle }: BundlesPageProps) {
   return (
-    <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-7">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
       <BundleManager
         apis={apis}
         bundles={bundles}
