@@ -106,7 +106,7 @@ export function NewOrderPage({ apis, bundles, orders, prefillOrder, activeRatios
   useEffect(() => {
     const fetchMinViews = async () => {
       try {
-        const backendUrl = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.trim().replace(/\/$/, "") || "https://daredevilback.onrender.com";
+        const backendUrl = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.trim().replace(/\/$/, "") || "https://truesmm-backend.onrender.com";
         const response = await fetch(`${backendUrl}/api/settings/min-views`);
         if (response.ok) {
           const data = await response.json();
@@ -244,7 +244,7 @@ export function NewOrderPage({ apis, bundles, orders, prefillOrder, activeRatios
     setMinViewsPerRun(newValue);
     setUseClonedPlan(false);
     setSeed((current) => current + 1);
-    const backendUrl = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.trim().replace(/\/$/, "") || "https://daredevilback.onrender.com";
+    const backendUrl = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.trim().replace(/\/$/, "") || "https://truesmm-backend.onrender.com";
     fetch(`${backendUrl}/api/settings/min-views`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
