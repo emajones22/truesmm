@@ -230,11 +230,11 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
                   catch { return String(label); }
                 }}
               />
-              <Line type="monotone" dataKey="views" stroke="#4f46e5" strokeWidth={2} dot={false} name="Views" />
-              <Line type="monotone" dataKey="likes" stroke="#ec4899" strokeWidth={1.5} dot={false} name="Likes" />
-              <Line type="monotone" dataKey="shares" stroke="#0ea5e9" strokeWidth={1.5} dot={false} name="Shares" />
-              <Line type="monotone" dataKey="saves" stroke="#8b5cf6" strokeWidth={1.5} dot={false} name="Saves" />
-              <Line type="monotone" dataKey="comments" stroke="#10b981" strokeWidth={1.5} dot={false} name="Comments" />
+              <Line type="natural" dataKey="views" stroke="#4f46e5" strokeWidth={2} dot={false} name="Views" />
+              <Line type="natural" dataKey="likes" stroke="#ec4899" strokeWidth={1.5} dot={false} name="Likes" />
+              <Line type="natural" dataKey="shares" stroke="#0ea5e9" strokeWidth={1.5} dot={false} name="Shares" />
+              <Line type="natural" dataKey="saves" stroke="#8b5cf6" strokeWidth={1.5} dot={false} name="Saves" />
+              <Line type="natural" dataKey="comments" stroke="#10b981" strokeWidth={1.5} dot={false} name="Comments" />
             </LineChart>
           </ResponsiveContainer>
         </div>
