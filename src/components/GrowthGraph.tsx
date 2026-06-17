@@ -525,12 +525,12 @@ export function GrowthGraph({
               <YAxis stroke="#cbd5e1" tick={{ fill: "#64748b", fontSize: 11 }} width={52} axisLine={false} tickLine={false} />
               <Tooltip content={<SteppedTooltip />} />
               <Legend wrapperStyle={{ fontSize: "12px", color: "#475569", paddingTop: 8 }} iconType="circle" />
-              <Line type="monotone" dataKey="views" stroke={COLORS.views} strokeWidth={2} dot={false} name="Views" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="likes" stroke={COLORS.likes} strokeWidth={2} dot={false} name="Likes" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="shares" stroke={COLORS.shares} strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="saves" stroke={COLORS.saves} strokeWidth={2} dot={false} name="Saves" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="reposts" stroke={COLORS.reposts} strokeWidth={2} dot={false} name="Reposts" isAnimationActive animationDuration={900} />
-              <Line type="monotone" dataKey="comments" stroke={COLORS.comments} strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
+              <Line type="natural" dataKey="views" stroke={COLORS.views} strokeWidth={2} dot={false} name="Views" isAnimationActive animationDuration={900} />
+              <Line type="natural" dataKey="likes" stroke={COLORS.likes} strokeWidth={2} dot={false} name="Likes" isAnimationActive animationDuration={900} />
+              <Line type="natural" dataKey="shares" stroke={COLORS.shares} strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
+              <Line type="natural" dataKey="saves" stroke={COLORS.saves} strokeWidth={2} dot={false} name="Saves" isAnimationActive animationDuration={900} />
+              <Line type="natural" dataKey="reposts" stroke={COLORS.reposts} strokeWidth={2} dot={false} name="Reposts" isAnimationActive animationDuration={900} />
+              <Line type="natural" dataKey="comments" stroke={COLORS.comments} strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
             </LineChart>
           </ResponsiveContainer>
         )}
