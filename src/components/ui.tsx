@@ -135,7 +135,11 @@ export type StatusKind =
   | "cancelled"
   | "failed"
   | "paused"
-  | "pending";
+  | "pending"
+  | "processing"   // ⭐ ADD (used by OrderCard for "processing" status)
+  | "unused"       // ⭐ ADD (used by AdminPage for new keys)
+  | "expired"      // ⭐ ADD (used by AdminPage for expired keys)
+  | "revoked";     // ⭐ ADD (used by AdminPage for revoked keys)
 
 const STATUS_STYLES: Record<StatusKind, { bg: string; text: string; dot: string; pulse?: boolean }> = {
   success: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
@@ -146,12 +150,18 @@ const STATUS_STYLES: Record<StatusKind, { bg: string; text: string; dot: string;
   brand: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500" },
 
   running: { bg: "bg-sky-50", text: "text-sky-700", dot: "bg-sky-500", pulse: true },
+  processing: { bg: "bg-sky-50", text: "text-sky-700", dot: "bg-sky-500", pulse: true },
   scheduled: { bg: "bg-violet-50", text: "text-violet-700", dot: "bg-violet-500" },
   completed: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
   cancelled: { bg: "bg-slate-100", text: "text-slate-600", dot: "bg-slate-400" },
   failed: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
   paused: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
   pending: { bg: "bg-slate-100", text: "text-slate-600", dot: "bg-slate-400" },
+
+  // AdminPage key statuses
+  unused: { bg: "bg-sky-50", text: "text-sky-700", dot: "bg-sky-500" },
+  expired: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
+  revoked: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
 };
 
 export function StatusPill({
