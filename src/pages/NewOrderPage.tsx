@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SchedulePreview } from "../components/SchedulePreview";
 import { RunTable } from "../components/RunTable";
 import type {
   ApiPanel,
@@ -281,11 +280,6 @@ export function NewOrderPage({
     setSeed((current) => current + 1);
   };
 
-  const handleGenerate = () => {
-    setUseClonedPlan(false);
-    setSeed((current) => current + 1);
-  };
-
   const handleMinViewsChange = (value: number) => {
     const newValue = Math.max(1, Math.floor(value));
     setMinViewsPerRun(newValue);
@@ -429,7 +423,7 @@ export function NewOrderPage({
 
       {/* ============ 2x2 LUDO BOARD LAYOUT ============ */}
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-2">
-        
+
         {/* === QUADRANT 1 (top-left): Target & Volume === */}
         <Card padding="md" className="border-2 border-indigo-200 shadow-md bg-white">
           <SectionTitle step="1" title="Target & volume" description="Where to send & how much" accent="indigo" />
@@ -664,7 +658,7 @@ export function NewOrderPage({
           </div>
         </Card>
 
-        {/* === QUADRANT 3 (bottom-left): Schedule Preview (chart + stats) === */}
+        {/* === QUADRANT 3 (bottom-left): Schedule Preview (chart + stats + presets + run table) === */}
         <Card padding="md" className="border-2 border-emerald-200 shadow-md bg-gradient-to-br from-white to-emerald-50/20">
           <SchedulePreviewCompact
             plan={safePlan}
@@ -1052,7 +1046,6 @@ export function NewOrderPage({
 /* COMPACT SCHEDULE PREVIEW (for grid layout)  */
 /* ============================================ */
 
-import { Card as _Card, Button as _Button, StatusPill as _StatusPill } from "../components/ui";
 import {
   CartesianGrid as _CartesianGrid,
   Legend as _Legend,
@@ -1063,7 +1056,6 @@ import {
   XAxis as _XAxis,
   YAxis as _YAxis,
 } from "recharts";
-import type { FavouriteConfig as _FavouriteConfig } from "../components/SchedulePreview";
 
 interface SchedulePreviewCompactProps {
   plan: PatternPlan;
@@ -1130,39 +1122,13 @@ function SchedulePreviewCompact({
   presetButtons,
   onApplyPreset,
 }: SchedulePreviewCompactProps) {
-  const [graphMode, setGraphMode] = useState<"smooth" | "stepped">("smooth");
   const [expandedRuns, setExpandedRuns] = useState(false);
   const safeRuns = plan?.runs || [];
   const safeFinishTime = plan?.finishTime instanceof Date ? plan.finishTime : new Date();
   const riskKind = plan?.risk === "Safe" ? "success" : plan?.risk === "Medium" ? "warning" : "danger";
   const riskLabel = plan?.risk ?? "Safe";
 
-  const smoothData = useMemo(() => {
-    const safeRuns = plan?.runs || [];
-    const rows: any[] = [];
-    rows.push({ label: "0m", views: 0, likes: 0, shares: 0, saves: 0, reposts: 0, comments: 0 });
-    for (let i = 0; i < safeRuns.length; i++) {
-      const current = safeRuns[i];
-      const prev = i === 0 ? { minutesFromStart: 0, cumulativeViews: 0, cumulativeLikes: 0, cumulativeShares: 0, cumulativeSaves: 0, cumulativeReposts: 0, cumulativeComments: 0 } : safeRuns[i - 1];
-      const dt = Math.max(1, current.minutesFromStart - prev.minutesFromStart);
-      const phase = i / Math.max(1, safeRuns.length - 1);
-      const eased = (start: number, end: number, progress: number) => {
-        const delta = end - start;
-        const v = start + delta * Math.pow(progress, phase < 0.2 ? 1.8 : phase > 0.8 ? 0.88 : 1.05);
-        return Math.max(0, v);
-      };
-      const wave = Math.sin((i + 1) * 1.13 + phase * Math.PI * 1.7);
-      const mA = prev.minutesFromStart + dt * 0.38;
-      const mB = prev.minutesFromStart + dt * 0.76;
-      rows.push({ label: `${Math.round(mA)}m`, views: eased(prev.cumulativeViews, current.cumulativeViews, 0.38) + wave * 100, likes: eased(prev.cumulativeLikes, current.cumulativeLikes, 0.38), shares: eased(prev.cumulativeShares, current.cumulativeShares, 0.38), saves: eased(prev.cumulativeSaves, current.cumulativeSaves, 0.38), reposts: eased(prev.cumulativeReposts, current.cumulativeReposts, 0.38), comments: eased(prev.cumulativeComments, current.cumulativeComments, 0.38) });
-      rows.push({ label: `${Math.round(mB)}m`, views: eased(prev.cumulativeViews, current.cumulativeViews, 0.76) - wave * 100, likes: eased(prev.cumulativeLikes, current.cumulativeLikes, 0.76), shares: eased(prev.cumulativeShares, current.cumulativeShares, 0.76), saves: eased(prev.cumulativeSaves, current.cumulativeSaves, 0.76), reposts: eased(prev.cumulativeReposts, current.cumulativeReposts, 0.76), comments: eased(prev.cumulativeComments, current.cumulativeComments, 0.76) });
-      rows.push({ label: current.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), views: current.cumulativeViews, likes: current.cumulativeLikes, shares: current.cumulativeShares, saves: current.cumulativeSaves, reposts: current.cumulativeReposts, comments: current.cumulativeComments });
-    }
-    return rows;
-  }, [plan]);
-
-  const steppedData = useMemo(() => buildCompactGraphData(plan), [plan]);
-  const chartData = graphMode === "smooth" ? smoothData : steppedData;
+  const chartData = useMemo(() => buildCompactGraphData(plan), [plan]);
 
   return (
     <div>
@@ -1180,10 +1146,9 @@ function SchedulePreviewCompact({
         </div>
         <div className="flex items-center gap-2">
           <StatusPill kind={riskKind} className="text-xs font-bold">{riskLabel}</StatusPill>
-          <div className="inline-flex rounded-lg border-2 border-slate-200 bg-slate-50 p-0.5">
-            <button onClick={() => setGraphMode("smooth")} className={`rounded-md px-2 py-1 text-[10px] font-bold transition ${graphMode === "smooth" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600"}`}>Smooth</button>
-            <button onClick={() => setGraphMode("stepped")} className={`rounded-md px-2 py-1 text-[10px] font-bold transition ${graphMode === "stepped" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600"}`}>Stepped</button>
-          </div>
+          <span className="inline-flex items-center rounded-lg border-2 border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+            📊 Stepped
+          </span>
         </div>
       </div>
 
@@ -1263,7 +1228,7 @@ function SchedulePreviewCompact({
           {expandedRuns ? "🔼 Hide runs" : `📋 View runs (${safeRuns.length})`}
         </button>
         <p className="text-[10px] font-semibold text-slate-500">
-          {graphMode === "smooth" ? "〰️ Smooth: Cumulative growth curve" : "📊 Stepped: Per-run cumulative view"}
+          📊 Per-run cumulative view
         </p>
       </div>
 
