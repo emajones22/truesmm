@@ -667,21 +667,23 @@ export function NewOrderPage({
         </Card>
       </div>
 
-      {/* ============ FULL-WIDTH SCHEDULE PREVIEW (iAMBATMAN EXACT) ============ */}
-      <Card padding="md" className="border-2 border-orange-200/70 shadow-xl shadow-black/10 bg-gradient-to-br from-[#fffaf3] via-[#f7f3ed] to-[#eee9e2]">
-        <SchedulePreviewIambatman
-          plan={safePlan}
-          quickPreset={quickPreset}
-          presetButtons={presetButtons}
-          onApplyPreset={handleApplyPreset}
-        />
-      </Card>
+      {/* ============ ROW 2: SCHEDULE & ENGAGEMENT ============ */}
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-2">
+        {/* ============ SCHEDULE PREVIEW (iAMBATMAN EXACT) ============ */}
+        <Card padding="md" className="border-2 border-orange-200/70 shadow-md bg-white flex flex-col">
+          <SchedulePreviewIambatman
+            plan={safePlan}
+            quickPreset={quickPreset}
+            presetButtons={presetButtons}
+            onApplyPreset={handleApplyPreset}
+          />
+        </Card>
 
-      {/* ============ ENGAGEMENT MIX ============ */}
-      <Card padding="md" className="border-2 border-amber-200 shadow-md bg-white">
-        <SectionTitle step="3" title="Engagement mix" description="Toggle engagement types" accent="amber" />
+        {/* ============ ENGAGEMENT MIX ============ */}
+        <Card padding="md" className="border-2 border-amber-200 shadow-md bg-white flex flex-col">
+          <SectionTitle step="3" title="Engagement mix" description="Toggle engagement types" accent="amber" />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
           {[
             { label: "Likes", description: "Heart reactions", active: includeLikes, toggle: () => { setUseClonedPlan(false); setIncludeLikes(!includeLikes); }, color: "pink", emoji: "❤️" },
             { label: "Shares", description: "Forward to friends", active: includeShares, toggle: () => { setUseClonedPlan(false); setIncludeShares(!includeShares); }, color: "sky", emoji: "🔁" },
@@ -746,6 +748,7 @@ export function NewOrderPage({
           </motion.div>
         )}
       </Card>
+      </div>
 
       {/* ============ STICKY FOOTER: COST + DEPLOY ============ */}
       <div className="sticky bottom-3 z-10">
@@ -1103,7 +1106,7 @@ function IamTooltip({ active, payload, label }: any) {
   if (filtered.length === 0) return null;
   return (
     <div style={{
-      background: "#fffaf3",
+      background: "#ffffff",
       border: "1px solid rgba(210, 180, 140, 0.55)",
       borderRadius: "0.75rem",
       color: "#27211b",
@@ -1219,15 +1222,15 @@ function SchedulePreviewIambatman({
             <_Tooltip content={<IamTooltip />} />
             <_Legend wrapperStyle={{ fontSize: "12px", color: "#44382e" }} iconType="circle" />
             {/* Faded planned lines (iambatman style) */}
-            <_Line type="monotone" dataKey="views" stroke="#d86bd8" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="likesVisual" stroke="#7188de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="commentsVisual" stroke="#54d5de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="sharesVisual" stroke="#e6a263" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
+            <_Line type="natural" dataKey="views" stroke="#d86bd8" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
+            <_Line type="natural" dataKey="likesVisual" stroke="#7188de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
+            <_Line type="natural" dataKey="commentsVisual" stroke="#54d5de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
+            <_Line type="natural" dataKey="sharesVisual" stroke="#e6a263" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
             {/* Solid actual lines (iambatman colors) */}
-            <_Line type="monotone" dataKey="views" stroke="#d86bd8" strokeWidth={2.4} dot={false} name="Views" isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="likesVisual" stroke="#7188de" strokeWidth={2.1} dot={false} name="Likes" isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="commentsVisual" stroke="#54d5de" strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="sharesVisual" stroke="#e6a263" strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
+            <_Line type="natural" dataKey="views" stroke="#d86bd8" strokeWidth={2.4} dot={false} name="Views" isAnimationActive animationDuration={900} />
+            <_Line type="natural" dataKey="likesVisual" stroke="#7188de" strokeWidth={2.1} dot={false} name="Likes" isAnimationActive animationDuration={900} />
+            <_Line type="natural" dataKey="commentsVisual" stroke="#54d5de" strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
+            <_Line type="natural" dataKey="sharesVisual" stroke="#e6a263" strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
           </_LineChart>
         </_ResponsiveContainer>
       </div>
