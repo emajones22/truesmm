@@ -136,10 +136,12 @@ export type StatusKind =
   | "failed"
   | "paused"
   | "pending"
-  | "processing"   // ⭐ ADD (used by OrderCard for "processing" status)
-  | "unused"       // ⭐ ADD (used by AdminPage for new keys)
-  | "expired"      // ⭐ ADD (used by AdminPage for expired keys)
-  | "revoked";     // ⭐ ADD (used by AdminPage for revoked keys)
+  | "processing"
+  | "active"       // ⭐ ADD (used by AdminPage for active keys)
+  | "unused"
+  | "expired"
+  | "revoked"
+  | "retrying";    // ⭐ ADD (used by RunTable for retrying runs)
 
 const STATUS_STYLES: Record<StatusKind, { bg: string; text: string; dot: string; pulse?: boolean }> = {
   success: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
@@ -158,10 +160,14 @@ const STATUS_STYLES: Record<StatusKind, { bg: string; text: string; dot: string;
   paused: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
   pending: { bg: "bg-slate-100", text: "text-slate-600", dot: "bg-slate-400" },
 
-  // AdminPage key statuses
+    // AdminPage key statuses
+  active: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
   unused: { bg: "bg-sky-50", text: "text-sky-700", dot: "bg-sky-500" },
   expired: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
   revoked: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500" },
+
+  // RunTable retrying status
+  retrying: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", pulse: true },
 };
 
 export function StatusPill({
