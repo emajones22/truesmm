@@ -173,9 +173,6 @@ export function NewOrderPage({
     fetchMinViews();
   }, []);
 
-  const selectedApi = apis.find(a => a.id === selectedApiId);
-  const selectedBundle = bundles.find(b => b.id === selectedBundleId);
-
   const config: OrderConfig = useMemo(
     () => ({
       postUrl,
@@ -309,8 +306,20 @@ export function NewOrderPage({
     { label: "Slow Burn", value: "slow-burn", emoji: "🌊" },
   ];
 
-  const estimatedRunCount = safePlan.runs.length;
-  const averageViewsPerRun = estimatedRunCount > 0 ? Math.round(totalViews / estimatedRunCount) : 0;
+  // Compute totals for stats
+  const graphTotals = useMemo(() => {
+    return safePlan.runs.reduce(
+      (acc, run) => ({
+        views: acc.views + (run.views || 0),
+        likes: acc.likes + (run.likes || 0),
+        shares: acc.shares + (run.shares || 0),
+        comments: acc.comments + (run.comments || 0),
+        saves: acc.saves + (run.saves || 0),
+        reposts: acc.reposts + (run.reposts || 0),
+      }),
+      { views: 0, likes: 0, shares: 0, comments: 0, saves: 0, reposts: 0 }
+    );
+  }, [safePlan.runs]);
 
   const totalCost = useMemo(() => {
     const selBundle = bundles.find(b => b.id === selectedBundleId);
@@ -356,6 +365,9 @@ export function NewOrderPage({
       comments: commentsPrice,
     };
   }, [selectedBundleId, selectedApiId, bundles, apis, safePlan.runs, includeLikes, includeShares, includeSaves, includeReposts, includeComments]);
+
+  const estimatedRunCount = safePlan.runs.length;
+  const averageViewsPerRun = estimatedRunCount > 0 ? Math.round(totalViews / estimatedRunCount) : 0;
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-4 px-3 py-4 sm:px-5 sm:py-6">
@@ -421,7 +433,7 @@ export function NewOrderPage({
         </InfoBanner>
       )}
 
-      {/* ============ 2x2 LUDO BOARD LAYOUT ============ */}
+      {/* ============ TOP ROW: Target & Volume + Delivery Pattern ============ */}
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-2">
 
         {/* === QUADRANT 1 (top-left): Target & Volume === */}
@@ -548,7 +560,6 @@ export function NewOrderPage({
           <SectionTitle step="2" title="Delivery pattern" description="How to spread views over time" accent="violet" />
 
           <div className="space-y-3">
-            {/* Delivery window */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5">Delivery window</label>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
@@ -591,7 +602,6 @@ export function NewOrderPage({
               )}
             </div>
 
-            {/* Variance */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-bold text-slate-700">Random variance</label>
@@ -609,7 +619,6 @@ export function NewOrderPage({
               />
             </div>
 
-            {/* Two-column row: peak hours + start delay */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
@@ -657,97 +666,90 @@ export function NewOrderPage({
             </div>
           </div>
         </Card>
-
-        {/* === QUADRANT 3 (bottom-left): Schedule Preview (iambatman visual style) === */}
-        <Card padding="md" className="border-2 border-orange-200/70 shadow-xl shadow-black/10 bg-gradient-to-br from-[#fffaf3] via-[#f7f3ed] to-[#eee9e2]">
-          <SchedulePreviewCompact
-            plan={safePlan}
-            variancePercent={variancePercent}
-            delivery={delivery}
-            includeLikes={includeLikes}
-            includeShares={includeShares}
-            includeSaves={includeSaves}
-            includeComments={includeComments}
-            includeReposts={includeReposts}
-            peakHoursBoost={peakHoursBoost}
-            quickPreset={quickPreset}
-            presetButtons={presetButtons}
-            onApplyPreset={handleApplyPreset}
-          />
-        </Card>
-
-        {/* === QUADRANT 4 (bottom-right): Engagement Mix === */}
-        <Card padding="md" className="border-2 border-amber-200 shadow-md bg-white">
-          <SectionTitle step="3" title="Engagement mix" description="Toggle engagement types" accent="amber" />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[
-              { label: "Likes", description: "Heart reactions", active: includeLikes, toggle: () => { setUseClonedPlan(false); setIncludeLikes(!includeLikes); }, color: "pink", emoji: "❤️" },
-              { label: "Shares", description: "Forward to friends", active: includeShares, toggle: () => { setUseClonedPlan(false); setIncludeShares(!includeShares); }, color: "sky", emoji: "🔁" },
-              { label: "Saves", description: "Bookmark posts", active: includeSaves, toggle: () => { setUseClonedPlan(false); setIncludeSaves(!includeSaves); }, color: "violet", emoji: "🔖" },
-              { label: "Reposts", description: "Share to feed", active: includeReposts, toggle: () => { setUseClonedPlan(false); setIncludeReposts(!includeReposts); }, color: "cyan", emoji: "📢" },
-              { label: "Comments", description: "Custom text", active: includeComments, toggle: () => { setUseClonedPlan(false); setIncludeComments(!includeComments); }, color: "amber", emoji: "💬" },
-            ].map((btn) => {
-              const tones: Record<string, { bg: string; ring: string }> = {
-                pink: { bg: "bg-pink-600", ring: "ring-pink-300" },
-                sky: { bg: "bg-sky-600", ring: "ring-sky-300" },
-                violet: { bg: "bg-violet-600", ring: "ring-violet-300" },
-                cyan: { bg: "bg-cyan-600", ring: "ring-cyan-300" },
-                amber: { bg: "bg-amber-600", ring: "ring-amber-300" },
-              };
-              const t = tones[btn.color];
-              return (
-                <button
-                  key={btn.label}
-                  type="button"
-                  onClick={btn.toggle}
-                  className={`flex items-center justify-between gap-2 rounded-lg p-2.5 text-left transition-all ${
-                    btn.active
-                      ? `${t.bg} text-white shadow-md ring-2 ${t.ring}`
-                      : "bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base">{btn.emoji}</span>
-                      <p className={`text-xs font-bold ${btn.active ? "text-white" : "text-slate-900"}`}>
-                        {btn.label}
-                      </p>
-                    </div>
-                    <p className={`text-[10px] font-medium mt-0.5 ${btn.active ? "text-white/80" : "text-slate-500"}`}>
-                      {btn.description}
-                    </p>
-                  </div>
-                  <div className={`flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${btn.active ? "bg-white/30" : "bg-slate-300"}`}>
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${btn.active ? "translate-x-4" : "translate-x-0.5"}`} />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {includeComments && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="mt-3"
-            >
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Custom comments <span className="text-[10px] font-medium text-slate-500">(one per line)</span>
-              </label>
-              <textarea
-                value={customComments}
-                onChange={(e) => setCustomComments(e.target.value)}
-                rows={2}
-                placeholder={"Nice post!\n🔥🔥\nAmazing"}
-                className="w-full rounded-lg border-2 border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none resize-none transition"
-              />
-            </motion.div>
-          )}
-        </Card>
       </div>
 
-      {/* ============ STICKY FOOTER: COST + DEPLOY (merged) ============ */}
+      {/* ============ FULL-WIDTH SCHEDULE PREVIEW (iambatman style) ============ */}
+      <Card padding="md" className="border-2 border-orange-200/70 shadow-xl shadow-black/10 bg-gradient-to-br from-[#fffaf3] via-[#f7f3ed] to-[#eee9e2]">
+        <SchedulePreviewIambatman
+          plan={safePlan}
+          totals={graphTotals}
+          presetButtons={presetButtons}
+          quickPreset={quickPreset}
+          onApplyPreset={handleApplyPreset}
+        />
+      </Card>
+
+      {/* ============ ENGAGEMENT MIX ============ */}
+      <Card padding="md" className="border-2 border-amber-200 shadow-md bg-white">
+        <SectionTitle step="3" title="Engagement mix" description="Toggle engagement types" accent="amber" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          {[
+            { label: "Likes", description: "Heart reactions", active: includeLikes, toggle: () => { setUseClonedPlan(false); setIncludeLikes(!includeLikes); }, color: "pink", emoji: "❤️" },
+            { label: "Shares", description: "Forward to friends", active: includeShares, toggle: () => { setUseClonedPlan(false); setIncludeShares(!includeShares); }, color: "sky", emoji: "🔁" },
+            { label: "Saves", description: "Bookmark posts", active: includeSaves, toggle: () => { setUseClonedPlan(false); setIncludeSaves(!includeSaves); }, color: "violet", emoji: "🔖" },
+            { label: "Reposts", description: "Share to feed", active: includeReposts, toggle: () => { setUseClonedPlan(false); setIncludeReposts(!includeReposts); }, color: "cyan", emoji: "📢" },
+            { label: "Comments", description: "Custom text", active: includeComments, toggle: () => { setUseClonedPlan(false); setIncludeComments(!includeComments); }, color: "amber", emoji: "💬" },
+          ].map((btn) => {
+            const tones: Record<string, { bg: string; ring: string }> = {
+              pink: { bg: "bg-pink-600", ring: "ring-pink-300" },
+              sky: { bg: "bg-sky-600", ring: "ring-sky-300" },
+              violet: { bg: "bg-violet-600", ring: "ring-violet-300" },
+              cyan: { bg: "bg-cyan-600", ring: "ring-cyan-300" },
+              amber: { bg: "bg-amber-600", ring: "ring-amber-300" },
+            };
+            const t = tones[btn.color];
+            return (
+              <button
+                key={btn.label}
+                type="button"
+                onClick={btn.toggle}
+                className={`flex items-center justify-between gap-2 rounded-lg p-2.5 text-left transition-all ${
+                  btn.active
+                    ? `${t.bg} text-white shadow-md ring-2 ${t.ring}`
+                    : "bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">{btn.emoji}</span>
+                    <p className={`text-xs font-bold ${btn.active ? "text-white" : "text-slate-900"}`}>
+                      {btn.label}
+                    </p>
+                  </div>
+                  <p className={`text-[10px] font-medium mt-0.5 ${btn.active ? "text-white/80" : "text-slate-500"}`}>
+                    {btn.description}
+                  </p>
+                </div>
+                <div className={`flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors ${btn.active ? "bg-white/30" : "bg-slate-300"}`}>
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${btn.active ? "translate-x-4" : "translate-x-0.5"}`} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {includeComments && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="mt-3"
+          >
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Custom comments <span className="text-[10px] font-medium text-slate-500">(one per line)</span>
+            </label>
+            <textarea
+              value={customComments}
+              onChange={(e) => setCustomComments(e.target.value)}
+              rows={2}
+              placeholder={"Nice post!\n🔥🔥\nAmazing"}
+              className="w-full rounded-lg border-2 border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100 focus:outline-none resize-none transition"
+            />
+          </motion.div>
+        )}
+      </Card>
+
+      {/* ============ STICKY FOOTER: COST + DEPLOY ============ */}
       <div className="sticky bottom-3 z-10">
         <div className="rounded-xl border-2 border-indigo-200 bg-white shadow-2xl shadow-indigo-500/20 overflow-hidden">
           <div className="px-3 sm:px-4 py-2 border-b border-slate-200 flex flex-wrap items-center gap-3">
@@ -1043,7 +1045,7 @@ export function NewOrderPage({
 }
 
 /* ============================================ */
-/* COMPACT SCHEDULE PREVIEW (iambatman style)  */
+/* SCHEDULE PREVIEW — iAMBATMAN STYLE          */
 /* ============================================ */
 
 import {
@@ -1057,32 +1059,23 @@ import {
   YAxis as _YAxis,
 } from "recharts";
 
-interface SchedulePreviewCompactProps {
+interface SchedulePreviewIambatmanProps {
   plan: PatternPlan;
-  variancePercent?: number;
-  delivery?: DeliveryOption;
-  includeLikes?: boolean;
-  includeShares?: boolean;
-  includeSaves?: boolean;
-  includeComments?: boolean;
-  includeReposts?: boolean;
-  peakHoursBoost?: boolean;
+  totals: { views: number; likes: number; shares: number; comments: number; saves: number; reposts: number };
   quickPreset?: QuickPatternPreset | null;
   presetButtons?: Array<{ label: string; value: QuickPatternPreset; emoji: string }>;
   onApplyPreset?: (preset: QuickPatternPreset) => void;
 }
 
-// 🎨 Colors matching iambatman repo's GrowthGraph design
-const COMPACT_COLORS = {
-  views: "#d86bd8",     // pink/magenta (Views)
-  likes: "#7188de",     // blue (Likes)
-  shares: "#e6a263",    // orange (Shares)
-  saves: "#22c55e",     // green (Saves)
-  reposts: "#06b6d4",   // cyan (Reposts)
-  comments: "#54d5de",  // teal/cyan (Comments)
+// 🎨 Colors matching iambatman repo's GrowthGraph
+const IAMBATMAN_COLORS = {
+  views: "#d86bd8",     // pink/magenta
+  likes: "#7188de",     // blue
+  shares: "#e6a263",    // orange
+  comments: "#54d5de",  // cyan/teal
 };
 
-function CompactTooltip({ active, payload, label }: any) {
+function IambatmanTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null;
   return (
     <div style={{
@@ -1104,56 +1097,67 @@ function CompactTooltip({ active, payload, label }: any) {
   );
 }
 
-function buildCompactGraphData(plan: PatternPlan) {
+function buildIambatmanGraphData(plan: PatternPlan) {
   const safeRuns = plan?.runs || [];
-  return safeRuns.map((run) => ({
-    label: run.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    views: run.cumulativeViews || 0,
-    likes: (run.cumulativeLikes || 0) * 10,
-    shares: (run.cumulativeShares || 0) * 10,
-    saves: (run.cumulativeSaves || 0) * 10,
-    reposts: (run.cumulativeReposts || 0) * 10,
-    comments: (run.cumulativeComments || 0) * 10,
-  }));
+  return safeRuns.map((run) => {
+    const date = run.at instanceof Date ? run.at : new Date(run.at);
+    const hours = Math.floor(date.getTime() / (1000 * 60 * 60));
+    return {
+      minute: (run.at instanceof Date ? run.at : new Date(run.at)).getTime() / 60000,
+      label: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      views: run.cumulativeViews || 0,
+      likesVisual: (run.cumulativeLikes || 0) * 10,
+      sharesVisual: (run.cumulativeShares || 0) * 10,
+      commentsVisual: (run.cumulativeComments || 0) * 10,
+    };
+  });
 }
 
-function SchedulePreviewCompact({
+function compactNumber(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return String(value);
+}
+
+function SchedulePreviewIambatman({
   plan,
-  variancePercent,
-  delivery,
-  includeLikes,
-  includeShares,
-  includeSaves,
-  includeComments,
-  includeReposts,
-  peakHoursBoost,
+  totals,
   quickPreset,
   presetButtons,
   onApplyPreset,
-}: SchedulePreviewCompactProps) {
+}: SchedulePreviewIambatmanProps) {
   const [expandedRuns, setExpandedRuns] = useState(false);
   const safeRuns = plan?.runs || [];
   const safeFinishTime = plan?.finishTime instanceof Date ? plan.finishTime : new Date();
   const riskKind = plan?.risk === "Safe" ? "success" : plan?.risk === "Medium" ? "warning" : "danger";
   const riskLabel = plan?.risk ?? "Safe";
 
-  const chartData = useMemo(() => buildCompactGraphData(plan), [plan]);
+  const chartData = useMemo(() => buildIambatmanGraphData(plan), [plan]);
+
+  // 4 stat cards matching the image exactly
+  const statsCards = [
+    { label: "Views", value: totals.views, borderClass: "border-pink-300", bgClass: "from-white to-pink-50", textClass: "text-stone-950" },
+    { label: "Likes", value: totals.likes, borderClass: "border-blue-300", bgClass: "from-white to-blue-50", textClass: "text-stone-950" },
+    { label: "Comments", value: totals.comments, borderClass: "border-cyan-300", bgClass: "from-white to-cyan-50", textClass: "text-stone-950" },
+    { label: "Shares", value: totals.shares, borderClass: "border-orange-300", bgClass: "from-white to-orange-50", textClass: "text-stone-950" },
+  ];
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 mb-4">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-rose-500 text-white text-base sm:text-lg font-extrabold shadow-md">
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-rose-500 text-white text-lg sm:text-xl font-extrabold shadow-md">
             📊
           </div>
           <div>
-            <h3 className="text-lg sm:text-xl font-bold tracking-tight text-orange-700">Schedule preview</h3>
-            <p className="text-xs sm:text-sm text-stone-600 font-medium leading-tight">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900">Schedule preview</h2>
+            <p className="text-xs sm:text-sm text-stone-600 font-medium">
               Pattern: <span className="text-orange-700 font-bold">{plan?.patternName || "—"}</span>
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <StatusPill kind={riskKind} className="text-xs font-bold">{riskLabel}</StatusPill>
           <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-100/80 px-2.5 py-1 text-[10px] font-bold text-orange-700">
             📊 Stepped
@@ -1161,10 +1165,10 @@ function SchedulePreviewCompact({
         </div>
       </div>
 
-      {/* Quick presets ABOVE the chart */}
+      {/* Quick presets */}
       {presetButtons && onApplyPreset && (
-        <div className="mb-3">
-          <label className="block text-xs font-bold text-stone-700 mb-1.5">Quick presets</label>
+        <div className="mb-4">
+          <label className="block text-xs font-bold text-stone-700 mb-2">Quick presets</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {presetButtons.map((preset) => {
               const isActive = quickPreset === preset.value;
@@ -1173,7 +1177,7 @@ function SchedulePreviewCompact({
                   key={preset.value}
                   type="button"
                   onClick={() => onApplyPreset(preset.value)}
-                  className={`rounded-lg px-2 py-2 text-xs font-bold transition-all ${
+                  className={`rounded-lg px-3 py-2 text-xs font-bold transition-all ${
                     isActive
                       ? "bg-violet-600 text-white shadow-md ring-2 ring-violet-300 scale-[1.02]"
                       : "bg-white border-2 border-stone-200 text-stone-700 hover:border-violet-300 hover:bg-violet-50/50"
@@ -1187,57 +1191,65 @@ function SchedulePreviewCompact({
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2 mb-3">
-        <div className="rounded-lg bg-orange-50/80 border border-orange-200 p-2 text-center">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-orange-700">Runs</p>
-          <p className="mt-0.5 text-lg font-extrabold text-orange-700 tabular-nums">{plan?.totalRuns ?? 0}</p>
-        </div>
-        <div className="rounded-lg bg-orange-50/80 border border-orange-200 p-2 text-center">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-orange-700">Interval</p>
-          <p className="mt-0.5 text-lg font-extrabold text-orange-700 tabular-nums">{plan?.approximateIntervalMin ?? 0}<span className="text-[10px]">m</span></p>
-        </div>
-        <div className="rounded-lg bg-orange-50/80 border border-orange-200 p-2 text-center">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-orange-700">Finish</p>
-          <p className="mt-0.5 text-xs font-extrabold text-stone-900 leading-tight">
-            {safeFinishTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-            <span className="block text-[10px] font-bold text-stone-500">{safeFinishTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-          </p>
-        </div>
+      {/* 🎨 4 stat cards (Views, Likes, Comments, Shares) - matching image */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
+        {statsCards.map((card) => (
+          <div
+            key={card.label}
+            className={`rounded-xl border-t-4 ${card.borderClass} bg-gradient-to-br ${card.bgClass} px-3 py-2.5 shadow-sm`}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">{card.label}</p>
+            <p className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums ${card.textClass}`}>
+              {card.value.toLocaleString()}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <div className="h-44 sm:h-52">
+      {/* 🎨 The chart - 4 lines only */}
+      <div className="h-64 sm:h-80">
         <_ResponsiveContainer width="100%" height="100%">
-          <_LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
-            {/* 🎨 iambatman warm cream theme */}
+          <_LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 4 }}>
             <_CartesianGrid strokeDasharray="3 3" stroke="#d8d0c5" opacity={0.45} />
-            <_XAxis dataKey="label" tick={{ fill: "#8a7e72", fontSize: 10, fontWeight: 600 }} minTickGap={20} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
-            <_YAxis tick={{ fill: "#8a7e72", fontSize: 10, fontWeight: 600 }} width={40} axisLine={false} tickLine={false} />
-            <_Tooltip content={<CompactTooltip />} />
-            <_Legend wrapperStyle={{ fontSize: "11px", color: "#44382e", paddingTop: 6, fontWeight: 600 }} iconType="circle" />
-            {/* Faded planned lines (iambatman style) */}
-            <_Line type="monotone" dataKey="views" stroke={COMPACT_COLORS.views} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="likes" stroke={COMPACT_COLORS.likes} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="shares" stroke={COMPACT_COLORS.shares} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="saves" stroke={COMPACT_COLORS.saves} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-saves" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="reposts" stroke={COMPACT_COLORS.reposts} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-reposts" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="comments" stroke={COMPACT_COLORS.comments} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
+            <_XAxis
+              dataKey="minute"
+              type="number"
+              domain={[0, "dataMax"]}
+              allowDataOverflow={false}
+              stroke="#9a8f84"
+              tick={{ fill: "#8a7e72", fontSize: 11 }}
+              tickFormatter={(value) => {
+                const hours = Math.round(Number(value) / 60);
+                if (hours < 24) return `${hours}h`;
+                return `${Math.round(hours / 24)}d`;
+              }}
+            />
+            <_YAxis stroke="#9a8f84" tick={{ fill: "#8a7e72", fontSize: 11 }} width={52} tickFormatter={compactNumber} />
+            <_Tooltip content={<IambatmanTooltip />} />
+            <_Legend wrapperStyle={{ fontSize: "12px", color: "#44382e", paddingTop: 8 }} iconType="circle" />
+            {/* Faded planned lines */}
+            <_Line type="monotone" dataKey="views" stroke={IAMBATMAN_COLORS.views} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="likesVisual" stroke={IAMBATMAN_COLORS.likes} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="sharesVisual" stroke={IAMBATMAN_COLORS.shares} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="commentsVisual" stroke={IAMBATMAN_COLORS.comments} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
             {/* Solid actual lines */}
-            <_Line type="monotone" dataKey="views" name="Views" stroke={COMPACT_COLORS.views} strokeWidth={2.4} dot={false} isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="likes" name="Likes" stroke={COMPACT_COLORS.likes} strokeWidth={2.1} dot={false} isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="shares" name="Shares" stroke={COMPACT_COLORS.shares} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="saves" name="Saves" stroke={COMPACT_COLORS.saves} strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="reposts" name="Reposts" stroke={COMPACT_COLORS.reposts} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="comments" name="Comments" stroke={COMPACT_COLORS.comments} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="views" stroke={IAMBATMAN_COLORS.views} strokeWidth={2.4} dot={false} name="Views" isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="likesVisual" stroke={IAMBATMAN_COLORS.likes} strokeWidth={2.1} dot={false} name="Likes" isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="sharesVisual" stroke={IAMBATMAN_COLORS.shares} strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="commentsVisual" stroke={IAMBATMAN_COLORS.comments} strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
           </_LineChart>
         </_ResponsiveContainer>
       </div>
 
-      {/* View runs toggle */}
-      <div className="mt-2 flex items-center justify-between gap-2">
+      {/* Footer info + run table toggle */}
+      <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex items-center gap-2 text-[10px] sm:text-xs text-stone-500">
+          <span>📊 Visual scale matches creator analytics screenshots; tooltip/top stats show real planned total.</span>
+        </div>
         <button
           type="button"
           onClick={() => setExpandedRuns((prev) => !prev)}
-          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition whitespace-nowrap ${
             expandedRuns
               ? "border-orange-500 bg-orange-500/10 text-orange-700"
               : "border-stone-200 bg-white text-stone-700 hover:border-orange-300 hover:bg-orange-50/50"
@@ -1245,9 +1257,6 @@ function SchedulePreviewCompact({
         >
           {expandedRuns ? "🔼 Hide runs" : `📋 View runs (${safeRuns.length})`}
         </button>
-        <p className="text-[10px] font-semibold text-stone-500">
-          📊 Per-run cumulative view
-        </p>
       </div>
 
       {/* Run table (expandable) */}
@@ -1257,7 +1266,7 @@ function SchedulePreviewCompact({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden mt-2"
+            className="overflow-hidden mt-3"
           >
             <RunTable runs={safeRuns} mode="schedule" />
           </motion.div>
