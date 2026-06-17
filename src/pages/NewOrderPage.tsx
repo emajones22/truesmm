@@ -658,8 +658,8 @@ export function NewOrderPage({
           </div>
         </Card>
 
-        {/* === QUADRANT 3 (bottom-left): Schedule Preview (chart + stats + presets + run table) === */}
-        <Card padding="md" className="border-2 border-emerald-200 shadow-md bg-gradient-to-br from-white to-emerald-50/20">
+        {/* === QUADRANT 3 (bottom-left): Schedule Preview (iambatman visual style) === */}
+        <Card padding="md" className="border-2 border-orange-200/70 shadow-xl shadow-black/10 bg-gradient-to-br from-[#fffaf3] via-[#f7f3ed] to-[#eee9e2]">
           <SchedulePreviewCompact
             plan={safePlan}
             variancePercent={variancePercent}
@@ -1043,7 +1043,7 @@ export function NewOrderPage({
 }
 
 /* ============================================ */
-/* COMPACT SCHEDULE PREVIEW (for grid layout)  */
+/* COMPACT SCHEDULE PREVIEW (iambatman style)  */
 /* ============================================ */
 
 import {
@@ -1072,22 +1072,31 @@ interface SchedulePreviewCompactProps {
   onApplyPreset?: (preset: QuickPatternPreset) => void;
 }
 
+// 🎨 Colors matching iambatman repo's GrowthGraph design
 const COMPACT_COLORS = {
-  views: "#4f46e5",
-  likes: "#ec4899",
-  shares: "#0ea5e9",
-  saves: "#8b5cf6",
-  reposts: "#06b6d4",
-  comments: "#10b981",
+  views: "#d86bd8",     // pink/magenta (Views)
+  likes: "#7188de",     // blue (Likes)
+  shares: "#e6a263",    // orange (Shares)
+  saves: "#22c55e",     // green (Saves)
+  reposts: "#06b6d4",   // cyan (Reposts)
+  comments: "#54d5de",  // teal/cyan (Comments)
 };
 
 function CompactTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-white rounded-lg border-2 border-slate-200 shadow-xl px-3 py-2 text-xs">
-      <p className="text-slate-500 mb-1.5 font-bold uppercase tracking-wider text-[10px]">{label}</p>
+    <div style={{
+      background: "#fffaf3",
+      border: "1px solid #e8d9c5",
+      borderRadius: "0.75rem",
+      color: "#27211b",
+      fontSize: "12px",
+      padding: "8px 12px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    }}>
+      <p style={{ marginBottom: 4, color: "#7c6f64", fontWeight: 600 }}>{label}</p>
       {payload.map((entry: any) => (
-        <p key={entry.name} style={{ color: entry.color }} className="font-bold tabular-nums">
+        <p key={entry.name} style={{ color: entry.color, margin: "2px 0", fontWeight: 600 }}>
           {entry.name}: {Math.round(entry.value).toLocaleString()}
         </p>
       ))}
@@ -1134,19 +1143,19 @@ function SchedulePreviewCompact({
     <div>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white text-base sm:text-lg font-extrabold shadow-md">
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-rose-500 text-white text-base sm:text-lg font-extrabold shadow-md">
             📊
           </div>
           <div>
-            <h3 className="text-lg sm:text-xl font-bold tracking-tight text-emerald-700">Schedule preview</h3>
-            <p className="text-xs sm:text-sm text-slate-600 font-medium leading-tight">
-              Pattern: <span className="text-emerald-700 font-bold">{plan?.patternName || "—"}</span>
+            <h3 className="text-lg sm:text-xl font-bold tracking-tight text-orange-700">Schedule preview</h3>
+            <p className="text-xs sm:text-sm text-stone-600 font-medium leading-tight">
+              Pattern: <span className="text-orange-700 font-bold">{plan?.patternName || "—"}</span>
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <StatusPill kind={riskKind} className="text-xs font-bold">{riskLabel}</StatusPill>
-          <span className="inline-flex items-center rounded-lg border-2 border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+          <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-100/80 px-2.5 py-1 text-[10px] font-bold text-orange-700">
             📊 Stepped
           </span>
         </div>
@@ -1155,7 +1164,7 @@ function SchedulePreviewCompact({
       {/* Quick presets ABOVE the chart */}
       {presetButtons && onApplyPreset && (
         <div className="mb-3">
-          <label className="block text-xs font-bold text-slate-700 mb-1.5">Quick presets</label>
+          <label className="block text-xs font-bold text-stone-700 mb-1.5">Quick presets</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {presetButtons.map((preset) => {
               const isActive = quickPreset === preset.value;
@@ -1167,7 +1176,7 @@ function SchedulePreviewCompact({
                   className={`rounded-lg px-2 py-2 text-xs font-bold transition-all ${
                     isActive
                       ? "bg-violet-600 text-white shadow-md ring-2 ring-violet-300 scale-[1.02]"
-                      : "bg-white border-2 border-slate-200 text-slate-700 hover:border-violet-300 hover:bg-violet-50/50"
+                      : "bg-white border-2 border-stone-200 text-stone-700 hover:border-violet-300 hover:bg-violet-50/50"
                   }`}
                 >
                   <span className="block">{preset.emoji} {preset.label}</span>
@@ -1179,19 +1188,19 @@ function SchedulePreviewCompact({
       )}
 
       <div className="grid grid-cols-3 gap-2 mb-3">
-        <div className="rounded-lg bg-white border border-slate-200 p-2 text-center">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Runs</p>
-          <p className="mt-0.5 text-lg font-extrabold text-emerald-700 tabular-nums">{plan?.totalRuns ?? 0}</p>
+        <div className="rounded-lg bg-orange-50/80 border border-orange-200 p-2 text-center">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-orange-700">Runs</p>
+          <p className="mt-0.5 text-lg font-extrabold text-orange-700 tabular-nums">{plan?.totalRuns ?? 0}</p>
         </div>
-        <div className="rounded-lg bg-white border border-slate-200 p-2 text-center">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Interval</p>
-          <p className="mt-0.5 text-lg font-extrabold text-emerald-700 tabular-nums">{plan?.approximateIntervalMin ?? 0}<span className="text-[10px]">m</span></p>
+        <div className="rounded-lg bg-orange-50/80 border border-orange-200 p-2 text-center">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-orange-700">Interval</p>
+          <p className="mt-0.5 text-lg font-extrabold text-orange-700 tabular-nums">{plan?.approximateIntervalMin ?? 0}<span className="text-[10px]">m</span></p>
         </div>
-        <div className="rounded-lg bg-white border border-slate-200 p-2 text-center">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Finish</p>
-          <p className="mt-0.5 text-xs font-extrabold text-slate-900 leading-tight">
+        <div className="rounded-lg bg-orange-50/80 border border-orange-200 p-2 text-center">
+          <p className="text-[9px] font-bold uppercase tracking-wider text-orange-700">Finish</p>
+          <p className="mt-0.5 text-xs font-extrabold text-stone-900 leading-tight">
             {safeFinishTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-            <span className="block text-[10px] font-bold text-slate-500">{safeFinishTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+            <span className="block text-[10px] font-bold text-stone-500">{safeFinishTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
           </p>
         </div>
       </div>
@@ -1199,15 +1208,24 @@ function SchedulePreviewCompact({
       <div className="h-44 sm:h-52">
         <_ResponsiveContainer width="100%" height="100%">
           <_LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
-            <_CartesianGrid strokeDasharray="3 3" stroke="#e6e8ec" />
-            <_XAxis dataKey="label" tick={{ fill: "#475569", fontSize: 10, fontWeight: 600 }} minTickGap={20} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
-            <_YAxis tick={{ fill: "#475569", fontSize: 10, fontWeight: 600 }} width={40} axisLine={false} tickLine={false} />
+            {/* 🎨 iambatman warm cream theme */}
+            <_CartesianGrid strokeDasharray="3 3" stroke="#d8d0c5" opacity={0.45} />
+            <_XAxis dataKey="label" tick={{ fill: "#8a7e72", fontSize: 10, fontWeight: 600 }} minTickGap={20} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
+            <_YAxis tick={{ fill: "#8a7e72", fontSize: 10, fontWeight: 600 }} width={40} axisLine={false} tickLine={false} />
             <_Tooltip content={<CompactTooltip />} />
-            <_Legend wrapperStyle={{ fontSize: "11px", color: "#1e293b", paddingTop: 6, fontWeight: 600 }} iconType="circle" />
-            <_Line type="monotone" dataKey="views" name="Views" stroke={COMPACT_COLORS.views} strokeWidth={2.5} dot={false} isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="likes" name="Likes" stroke={COMPACT_COLORS.likes} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
+            <_Legend wrapperStyle={{ fontSize: "11px", color: "#44382e", paddingTop: 6, fontWeight: 600 }} iconType="circle" />
+            {/* Faded planned lines (iambatman style) */}
+            <_Line type="monotone" dataKey="views" stroke={COMPACT_COLORS.views} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="likes" stroke={COMPACT_COLORS.likes} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="shares" stroke={COMPACT_COLORS.shares} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="saves" stroke={COMPACT_COLORS.saves} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-saves" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="reposts" stroke={COMPACT_COLORS.reposts} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-reposts" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="comments" stroke={COMPACT_COLORS.comments} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
+            {/* Solid actual lines */}
+            <_Line type="monotone" dataKey="views" name="Views" stroke={COMPACT_COLORS.views} strokeWidth={2.4} dot={false} isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="likes" name="Likes" stroke={COMPACT_COLORS.likes} strokeWidth={2.1} dot={false} isAnimationActive animationDuration={900} />
             <_Line type="monotone" dataKey="shares" name="Shares" stroke={COMPACT_COLORS.shares} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="saves" name="Saves" stroke={COMPACT_COLORS.saves} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="saves" name="Saves" stroke={COMPACT_COLORS.saves} strokeWidth={1.8} dot={false} isAnimationActive animationDuration={900} />
             <_Line type="monotone" dataKey="reposts" name="Reposts" stroke={COMPACT_COLORS.reposts} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
             <_Line type="monotone" dataKey="comments" name="Comments" stroke={COMPACT_COLORS.comments} strokeWidth={2} dot={false} isAnimationActive animationDuration={900} />
           </_LineChart>
@@ -1221,13 +1239,13 @@ function SchedulePreviewCompact({
           onClick={() => setExpandedRuns((prev) => !prev)}
           className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
             expandedRuns
-              ? "border-emerald-500 bg-emerald-500/10 text-emerald-700"
-              : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:bg-emerald-50/50"
+              ? "border-orange-500 bg-orange-500/10 text-orange-700"
+              : "border-stone-200 bg-white text-stone-700 hover:border-orange-300 hover:bg-orange-50/50"
           }`}
         >
           {expandedRuns ? "🔼 Hide runs" : `📋 View runs (${safeRuns.length})`}
         </button>
-        <p className="text-[10px] font-semibold text-slate-500">
+        <p className="text-[10px] font-semibold text-stone-500">
           📊 Per-run cumulative view
         </p>
       </div>
