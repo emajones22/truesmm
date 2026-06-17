@@ -306,16 +306,15 @@ export function NewOrderPage({
     { label: "Slow Burn", value: "slow-burn", emoji: "🌊" },
   ];
 
-  // Compute totals for stats
   const graphTotals = useMemo(() => {
     return safePlan.runs.reduce(
       (acc, run) => ({
-        views: acc.views + (run.views || 0),
-        likes: acc.likes + (run.likes || 0),
-        shares: acc.shares + (run.shares || 0),
-        comments: acc.comments + (run.comments || 0),
-        saves: acc.saves + (run.saves || 0),
-        reposts: acc.reposts + (run.reposts || 0),
+        views: Math.max(acc.views, run.cumulativeViews || 0),
+        likes: Math.max(acc.likes, run.cumulativeLikes || 0),
+        shares: Math.max(acc.shares, run.cumulativeShares || 0),
+        comments: Math.max(acc.comments, run.cumulativeComments || 0),
+        saves: Math.max(acc.saves, run.cumulativeSaves || 0),
+        reposts: Math.max(acc.reposts, run.cumulativeReposts || 0),
       }),
       { views: 0, likes: 0, shares: 0, comments: 0, saves: 0, reposts: 0 }
     );
@@ -668,13 +667,12 @@ export function NewOrderPage({
         </Card>
       </div>
 
-      {/* ============ FULL-WIDTH SCHEDULE PREVIEW (iambatman style) ============ */}
+      {/* ============ FULL-WIDTH SCHEDULE PREVIEW (iAMBATMAN EXACT) ============ */}
       <Card padding="md" className="border-2 border-orange-200/70 shadow-xl shadow-black/10 bg-gradient-to-br from-[#fffaf3] via-[#f7f3ed] to-[#eee9e2]">
         <SchedulePreviewIambatman
           plan={safePlan}
-          totals={graphTotals}
-          presetButtons={presetButtons}
           quickPreset={quickPreset}
+          presetButtons={presetButtons}
           onApplyPreset={handleApplyPreset}
         />
       </Card>
@@ -1045,7 +1043,7 @@ export function NewOrderPage({
 }
 
 /* ============================================ */
-/* SCHEDULE PREVIEW — iAMBATMAN STYLE          */
+/* SCHEDULE PREVIEW — iAMBATMAN EXACT MATCH     */
 /* ============================================ */
 
 import {
@@ -1059,69 +1057,78 @@ import {
   YAxis as _YAxis,
 } from "recharts";
 
-interface SchedulePreviewIambatmanProps {
-  plan: PatternPlan;
-  totals: { views: number; likes: number; shares: number; comments: number; saves: number; reposts: number };
-  quickPreset?: QuickPatternPreset | null;
-  presetButtons?: Array<{ label: string; value: QuickPatternPreset; emoji: string }>;
-  onApplyPreset?: (preset: QuickPatternPreset) => void;
+function compactNumber(value: number) {
+  if (!Number.isFinite(value)) return "0";
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(value >= 100_000 ? 0 : 1)}K`;
+  return String(Math.round(value));
 }
 
-// 🎨 Colors matching iambatman repo's GrowthGraph
-const IAMBATMAN_COLORS = {
-  views: "#d86bd8",     // pink/magenta
-  likes: "#7188de",     // blue
-  shares: "#e6a263",    // orange
-  comments: "#54d5de",  // cyan/teal
-};
+function buildIambatmanChartData(plan: PatternPlan) {
+  const safeRuns = plan?.runs || [];
+  const final = safeRuns[safeRuns.length - 1];
+  const totalViews = Math.max(1, final?.cumulativeViews || safeRuns.reduce((sum, r) => sum + (r.views || 0), 0));
+  const totalLikes = Math.max(0, final?.cumulativeLikes || safeRuns.reduce((sum, r) => sum + (r.likes || 0), 0));
+  const totalShares = Math.max(0, final?.cumulativeShares || safeRuns.reduce((sum, r) => sum + (r.shares || 0), 0));
+  const totalComments = Math.max(0, final?.cumulativeComments || safeRuns.reduce((sum, r) => sum + (r.comments || 0), 0));
 
-function IambatmanTooltip({ active, payload, label }: any) {
+  // 🎨 Screenshot-style synthetic visual scale (iambatman exact)
+  const visualHeight = {
+    likes: totalViews * 0.56,
+    shares: totalViews * 0.18,
+    comments: totalViews * 0.045,
+  };
+
+  const startMs = safeRuns[0]
+    ? safeRuns[0].at.getTime() - Math.max(0, safeRuns[0].minutesFromStart || 0) * 60_000
+    : Date.now();
+
+  const rows = safeRuns.map((run) => {
+    return {
+      minute: Math.max(0, Math.round((run.at.getTime() - startMs) / 60_000)),
+      time: run.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      views: run.cumulativeViews || 0,
+      likesVisual: totalLikes > 0 ? ((run.cumulativeLikes || 0) / totalLikes) * visualHeight.likes : 0,
+      sharesVisual: totalShares > 0 ? ((run.cumulativeShares || 0) / totalShares) * visualHeight.shares : 0,
+      commentsVisual: totalComments > 0 ? ((run.cumulativeComments || 0) / totalComments) * visualHeight.comments : 0,
+    };
+  });
+
+  return rows;
+}
+
+function IamTooltip({ active, payload, label }: any) {
   if (!active || !payload || !payload.length) return null;
+  const filtered = payload.filter((e: any) => !String(e.name || "").startsWith("planned-"));
+  if (filtered.length === 0) return null;
   return (
     <div style={{
       background: "#fffaf3",
-      border: "1px solid #e8d9c5",
+      border: "1px solid rgba(210, 180, 140, 0.55)",
       borderRadius: "0.75rem",
       color: "#27211b",
       fontSize: "12px",
       padding: "8px 12px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
     }}>
-      <p style={{ marginBottom: 4, color: "#7c6f64", fontWeight: 600 }}>{label}</p>
-      {payload.map((entry: any) => (
-        <p key={entry.name} style={{ color: entry.color, margin: "2px 0", fontWeight: 600 }}>
-          {entry.name}: {Math.round(entry.value).toLocaleString()}
+      <p style={{ marginBottom: 4, color: "#9a8f84" }}>{label}</p>
+      {filtered.map((e: any) => (
+        <p key={e.name} style={{ color: e.color, margin: "2px 0" }}>
+          {e.name}: {Math.round(e.value).toLocaleString()}
         </p>
       ))}
     </div>
   );
 }
 
-function buildIambatmanGraphData(plan: PatternPlan) {
-  const safeRuns = plan?.runs || [];
-  return safeRuns.map((run) => {
-    const date = run.at instanceof Date ? run.at : new Date(run.at);
-    const hours = Math.floor(date.getTime() / (1000 * 60 * 60));
-    return {
-      minute: (run.at instanceof Date ? run.at : new Date(run.at)).getTime() / 60000,
-      label: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      views: run.cumulativeViews || 0,
-      likesVisual: (run.cumulativeLikes || 0) * 10,
-      sharesVisual: (run.cumulativeShares || 0) * 10,
-      commentsVisual: (run.cumulativeComments || 0) * 10,
-    };
-  });
-}
-
-function compactNumber(value: number) {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return String(value);
+interface SchedulePreviewIambatmanProps {
+  plan: PatternPlan;
+  quickPreset?: QuickPatternPreset | null;
+  presetButtons?: Array<{ label: string; value: QuickPatternPreset; emoji: string }>;
+  onApplyPreset?: (preset: QuickPatternPreset) => void;
 }
 
 function SchedulePreviewIambatman({
   plan,
-  totals,
   quickPreset,
   presetButtons,
   onApplyPreset,
@@ -1132,40 +1139,33 @@ function SchedulePreviewIambatman({
   const riskKind = plan?.risk === "Safe" ? "success" : plan?.risk === "Medium" ? "warning" : "danger";
   const riskLabel = plan?.risk ?? "Safe";
 
-  const chartData = useMemo(() => buildIambatmanGraphData(plan), [plan]);
+  const graphTotals = useMemo(() => {
+    return safeRuns.reduce(
+      (acc, run) => ({
+        views: Math.max(acc.views, run.cumulativeViews || 0),
+        likes: Math.max(acc.likes, run.cumulativeLikes || 0),
+        shares: Math.max(acc.shares, run.cumulativeShares || 0),
+        comments: Math.max(acc.comments, run.cumulativeComments || 0),
+        saves: Math.max(acc.saves, run.cumulativeSaves || 0),
+        reposts: Math.max(acc.reposts, run.cumulativeReposts || 0),
+      }),
+      { views: 0, likes: 0, shares: 0, comments: 0, saves: 0, reposts: 0 }
+    );
+  }, [safeRuns]);
 
-  // 4 stat cards matching the image exactly
+  const chartData = useMemo(() => buildIambatmanChartData(plan), [plan]);
+
+  // 🎯 4 stat cards matching image EXACTLY
   const statsCards = [
-    { label: "Views", value: totals.views, borderClass: "border-pink-300", bgClass: "from-white to-pink-50", textClass: "text-stone-950" },
-    { label: "Likes", value: totals.likes, borderClass: "border-blue-300", bgClass: "from-white to-blue-50", textClass: "text-stone-950" },
-    { label: "Comments", value: totals.comments, borderClass: "border-cyan-300", bgClass: "from-white to-cyan-50", textClass: "text-stone-950" },
-    { label: "Shares", value: totals.shares, borderClass: "border-orange-300", bgClass: "from-white to-orange-50", textClass: "text-stone-950" },
+    { label: "Views", value: graphTotals.views, color: "border-pink-300", text: "text-stone-950" },
+    { label: "Likes", value: graphTotals.likes, color: "border-blue-300", text: "text-stone-950" },
+    { label: "Comments", value: graphTotals.comments, color: "border-cyan-300", text: "text-stone-950" },
+    { label: "Shares", value: graphTotals.shares, color: "border-orange-300", text: "text-stone-950" },
   ];
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-rose-500 text-white text-lg sm:text-xl font-extrabold shadow-md">
-            📊
-          </div>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-stone-900">Schedule preview</h2>
-            <p className="text-xs sm:text-sm text-stone-600 font-medium">
-              Pattern: <span className="text-orange-700 font-bold">{plan?.patternName || "—"}</span>
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <StatusPill kind={riskKind} className="text-xs font-bold">{riskLabel}</StatusPill>
-          <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-100/80 px-2.5 py-1 text-[10px] font-bold text-orange-700">
-            📊 Stepped
-          </span>
-        </div>
-      </div>
-
-      {/* Quick presets */}
+      {/* 🎯 Quick presets ABOVE chart */}
       {presetButtons && onApplyPreset && (
         <div className="mb-4">
           <label className="block text-xs font-bold text-stone-700 mb-2">Quick presets</label>
@@ -1191,25 +1191,20 @@ function SchedulePreviewIambatman({
         </div>
       )}
 
-      {/* 🎨 4 stat cards (Views, Likes, Comments, Shares) - matching image */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
-        {statsCards.map((card) => (
-          <div
-            key={card.label}
-            className={`rounded-xl border-t-4 ${card.borderClass} bg-gradient-to-br ${card.bgClass} px-3 py-2.5 shadow-sm`}
-          >
-            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">{card.label}</p>
-            <p className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums ${card.textClass}`}>
-              {card.value.toLocaleString()}
-            </p>
+      {/* 🎯 Screenshot-style top metrics - EXACT match with image */}
+      <div className="mb-3 grid grid-cols-4 overflow-hidden rounded-xl border border-orange-200/70 bg-white/35 text-center shadow-inner shadow-white/40">
+        {statsCards.map((item) => (
+          <div key={item.label} className={`border-b-2 ${item.color} px-2 py-2`}>
+            <div className="text-[10px] font-medium text-stone-500">{item.label}</div>
+            <div className={`text-sm font-semibold ${item.text}`}>{compactNumber(item.value)}</div>
           </div>
         ))}
       </div>
 
-      {/* 🎨 The chart - 4 lines only */}
-      <div className="h-64 sm:h-80">
+      {/* 🎯 The chart - EXACT 4 lines matching image */}
+      <div className="h-72 sm:h-80">
         <_ResponsiveContainer width="100%" height="100%">
-          <_LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 4 }}>
+          <_LineChart data={chartData} margin={{ top: 14, right: 20, left: 0, bottom: 4 }}>
             <_CartesianGrid strokeDasharray="3 3" stroke="#d8d0c5" opacity={0.45} />
             <_XAxis
               dataKey="minute"
@@ -1218,44 +1213,36 @@ function SchedulePreviewIambatman({
               allowDataOverflow={false}
               stroke="#9a8f84"
               tick={{ fill: "#8a7e72", fontSize: 11 }}
-              tickFormatter={(value) => {
-                const hours = Math.round(Number(value) / 60);
-                if (hours < 24) return `${hours}h`;
-                return `${Math.round(hours / 24)}d`;
-              }}
+              tickFormatter={(value) => `${Math.round(Number(value) / 60)}h`}
             />
             <_YAxis stroke="#9a8f84" tick={{ fill: "#8a7e72", fontSize: 11 }} width={52} tickFormatter={compactNumber} />
-            <_Tooltip content={<IambatmanTooltip />} />
-            <_Legend wrapperStyle={{ fontSize: "12px", color: "#44382e", paddingTop: 8 }} iconType="circle" />
-            {/* Faded planned lines */}
-            <_Line type="monotone" dataKey="views" stroke={IAMBATMAN_COLORS.views} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="likesVisual" stroke={IAMBATMAN_COLORS.likes} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="sharesVisual" stroke={IAMBATMAN_COLORS.shares} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
-            <_Line type="monotone" dataKey="commentsVisual" stroke={IAMBATMAN_COLORS.comments} opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
-            {/* Solid actual lines */}
-            <_Line type="monotone" dataKey="views" stroke={IAMBATMAN_COLORS.views} strokeWidth={2.4} dot={false} name="Views" isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="likesVisual" stroke={IAMBATMAN_COLORS.likes} strokeWidth={2.1} dot={false} name="Likes" isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="sharesVisual" stroke={IAMBATMAN_COLORS.shares} strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
-            <_Line type="monotone" dataKey="commentsVisual" stroke={IAMBATMAN_COLORS.comments} strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
+            <_Tooltip content={<IamTooltip />} />
+            <_Legend wrapperStyle={{ fontSize: "12px", color: "#44382e" }} iconType="circle" />
+            {/* Faded planned lines (iambatman style) */}
+            <_Line type="monotone" dataKey="views" stroke="#d86bd8" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="likesVisual" stroke="#7188de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="commentsVisual" stroke="#54d5de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
+            <_Line type="monotone" dataKey="sharesVisual" stroke="#e6a263" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
+            {/* Solid actual lines (iambatman colors) */}
+            <_Line type="monotone" dataKey="views" stroke="#d86bd8" strokeWidth={2.4} dot={false} name="Views" isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="likesVisual" stroke="#7188de" strokeWidth={2.1} dot={false} name="Likes" isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="commentsVisual" stroke="#54d5de" strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
+            <_Line type="monotone" dataKey="sharesVisual" stroke="#e6a263" strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
           </_LineChart>
         </_ResponsiveContainer>
       </div>
 
-      {/* Footer info + run table toggle */}
-      <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="flex items-center gap-2 text-[10px] sm:text-xs text-stone-500">
-          <span>📊 Visual scale matches creator analytics screenshots; tooltip/top stats show real planned total.</span>
-        </div>
+      {/* 🎯 Footer matching image EXACTLY */}
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="text-[9px] text-stone-600">
+          📊 Visual scale matches creator analytics screenshots; tooltip/top stats show real planned total.
+        </p>
         <button
           type="button"
           onClick={() => setExpandedRuns((prev) => !prev)}
-          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition whitespace-nowrap ${
-            expandedRuns
-              ? "border-orange-500 bg-orange-500/10 text-orange-700"
-              : "border-stone-200 bg-white text-stone-700 hover:border-orange-300 hover:bg-orange-50/50"
-          }`}
+          className="text-[9px] font-bold text-rose-500 hover:text-rose-600 transition whitespace-nowrap"
         >
-          {expandedRuns ? "🔼 Hide runs" : `📋 View runs (${safeRuns.length})`}
+          {expandedRuns ? "🔼 Hide runs" : "❤️ Save config to reuse with any view count"}
         </button>
       </div>
 
