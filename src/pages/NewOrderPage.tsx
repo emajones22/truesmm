@@ -750,6 +750,12 @@ export function NewOrderPage({
       </Card>
       </div>
 
+      {/* ============ ROW 3: RUN TABLE ============ */}
+      <Card padding="md" className="border-2 border-slate-200 shadow-md bg-white">
+        <SectionTitle step="4" title="Run schedule" description="Detailed list of automated runs" accent="emerald" />
+        <RunTable runs={safePlan.runs || []} mode="schedule" />
+      </Card>
+
       {/* ============ STICKY FOOTER: COST + DEPLOY ============ */}
       <div className="sticky bottom-3 z-10">
         <div className="rounded-xl border-2 border-indigo-200 bg-white shadow-2xl shadow-indigo-500/20 overflow-hidden">
@@ -1094,6 +1100,9 @@ function buildIambatmanChartData(plan: PatternPlan) {
       likesVisual: totalLikes > 0 ? ((run.cumulativeLikes || 0) / totalLikes) * visualHeight.likes : 0,
       sharesVisual: totalShares > 0 ? ((run.cumulativeShares || 0) / totalShares) * visualHeight.shares : 0,
       commentsVisual: totalComments > 0 ? ((run.cumulativeComments || 0) / totalComments) * visualHeight.comments : 0,
+      likesActual: run.cumulativeLikes || 0,
+      sharesActual: run.cumulativeShares || 0,
+      commentsActual: run.cumulativeComments || 0,
     };
   });
 
@@ -1113,13 +1122,20 @@ function IamTooltip({ active, payload, label }: any) {
       fontSize: "12px",
       padding: "8px 12px",
     }}>
-      <p style={{ marginBottom: 4, color: "#9a8f84" }}>{label}</p>
-      {filtered.map((e: any) => (
-        <p key={e.name} style={{ color: e.color, margin: "2px 0" }}>
-          {e.name}: {Math.round(e.value).toLocaleString()}
-        </p>
-      ))}
-    </div>
+              <p style={{ marginBottom: 4, color: "#9a8f84" }}>{label}</p>
+              {filtered.map((e: any) => {
+                let displayValue = e.value;
+                if (e.dataKey === "likesVisual") displayValue = e.payload.likesActual;
+                if (e.dataKey === "sharesVisual") displayValue = e.payload.sharesActual;
+                if (e.dataKey === "commentsVisual") displayValue = e.payload.commentsActual;
+                
+                return (
+                  <p key={e.name} style={{ color: e.color, margin: "2px 0" }}>
+                    {e.name}: {Math.round(displayValue).toLocaleString()}
+                  </p>
+                );
+              })}
+            </div>
   );
 }
 
@@ -1222,15 +1238,15 @@ function SchedulePreviewIambatman({
             <_Tooltip content={<IamTooltip />} />
             <_Legend wrapperStyle={{ fontSize: "12px", color: "#44382e" }} iconType="circle" />
             {/* Faded planned lines (iambatman style) */}
-            <_Line type="natural" dataKey="views" stroke="#d86bd8" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
-            <_Line type="natural" dataKey="likesVisual" stroke="#7188de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
-            <_Line type="natural" dataKey="commentsVisual" stroke="#54d5de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
-            <_Line type="natural" dataKey="sharesVisual" stroke="#e6a263" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
+            <_Line type="basis" dataKey="views" stroke="#d86bd8" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-views" legendType="none" tooltipType="none" />
+            <_Line type="basis" dataKey="likesVisual" stroke="#7188de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-likes" legendType="none" tooltipType="none" />
+            <_Line type="basis" dataKey="commentsVisual" stroke="#54d5de" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-comments" legendType="none" tooltipType="none" />
+            <_Line type="basis" dataKey="sharesVisual" stroke="#e6a263" opacity={0.13} dot={false} strokeDasharray="5 5" name="planned-shares" legendType="none" tooltipType="none" />
             {/* Solid actual lines (iambatman colors) */}
-            <_Line type="natural" dataKey="views" stroke="#d86bd8" strokeWidth={2.4} dot={false} name="Views" isAnimationActive animationDuration={900} />
-            <_Line type="natural" dataKey="likesVisual" stroke="#7188de" strokeWidth={2.1} dot={false} name="Likes" isAnimationActive animationDuration={900} />
-            <_Line type="natural" dataKey="commentsVisual" stroke="#54d5de" strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
-            <_Line type="natural" dataKey="sharesVisual" stroke="#e6a263" strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
+            <_Line type="basis" dataKey="views" stroke="#d86bd8" strokeWidth={2.4} dot={false} name="Views" isAnimationActive animationDuration={900} />
+            <_Line type="basis" dataKey="likesVisual" stroke="#7188de" strokeWidth={2.1} dot={false} name="Likes" isAnimationActive animationDuration={900} />
+            <_Line type="basis" dataKey="commentsVisual" stroke="#54d5de" strokeWidth={2} dot={false} name="Comments" isAnimationActive animationDuration={900} />
+            <_Line type="basis" dataKey="sharesVisual" stroke="#e6a263" strokeWidth={2} dot={false} name="Shares" isAnimationActive animationDuration={900} />
           </_LineChart>
         </_ResponsiveContainer>
       </div>
@@ -1240,28 +1256,7 @@ function SchedulePreviewIambatman({
         <p className="text-[9px] text-stone-600">
           📊 Visual scale matches creator analytics screenshots; tooltip/top stats show real planned total.
         </p>
-        <button
-          type="button"
-          onClick={() => setExpandedRuns((prev) => !prev)}
-          className="text-[9px] font-bold text-rose-500 hover:text-rose-600 transition whitespace-nowrap"
-        >
-          {expandedRuns ? "🔼 Hide runs" : "❤️ Save config to reuse with any view count"}
-        </button>
       </div>
-
-      {/* Run table (expandable) */}
-      <AnimatePresence initial={false}>
-        {expandedRuns && safeRuns.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden mt-3"
-          >
-            <RunTable runs={safeRuns} mode="schedule" />
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
