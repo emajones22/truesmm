@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { BackendRunInfo, CreatedOrder } from "../types/order";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { OrderCard } from "../components/OrderCard";
 import {
   Button,
@@ -45,6 +44,7 @@ const TABS: { key: TabType; label: string; icon?: React.ReactNode }[] = [
 ];
 
 function getRealStatus(order: CreatedOrder): string {
+  if (!order) return "running";
   if (order.status === "cancelled") return "cancelled";
   if (order.status === "failed") return "failed";
   if (order.status === "completed") return "completed";
@@ -59,7 +59,7 @@ function getRealStatus(order: CreatedOrder): string {
         run?.at instanceof Date
           ? run.at.getTime()
           : new Date(run?.at ?? now).getTime();
-      return runTime > now;
+      return Number.isFinite(runTime) && runTime > now;
     });
     if (allFuture) return "scheduled";
   }
@@ -72,24 +72,6 @@ function getRealStatus(order: CreatedOrder): string {
 
   if (order.status === "processing" || order.status === "pending") return "running";
   return "running";
-}
-
-function getDeliveredStats(order: CreatedOrder) {
-  const runs = order.runs || [];
-  const runStatuses = order.runStatuses || [];
-  let views = 0, likes = 0, shares = 0, saves = 0, comments = 0, reposts = 0;
-  runs.forEach((run, index) => {
-    const status = runStatuses[index];
-    if (status === "completed") {
-      views += run.views || 0;
-      likes += run.likes || 0;
-      shares += run.shares || 0;
-      saves += run.saves || 0;
-      comments += run.comments || 0;
-      reposts += run.reposts || 0;
-    }
-  });
-  return { views, likes, shares, saves, comments, reposts };
 }
 
 function BackendRunTable({ runs }: { runs: BackendRunInfo[] }) {
@@ -127,43 +109,50 @@ function BackendRunTable({ runs }: { runs: BackendRunInfo[] }) {
         </thead>
         <tbody className="divide-y divide-slate-100">
           {runs.map((run, index) => {
-            const scheduledTime = new Date(run.time);
-            const executedTime = run.executedAt ? new Date(run.executedAt) : null;
-            const isCompleted = run.status === "completed";
+            const safeRun = run || {};
+            const scheduledTime = safeRun.time ? new Date(safeRun.time) : null;
+            const executedTime = safeRun.executedAt ? new Date(safeRun.executedAt) : null;
+            const isCompleted = safeRun.status === "completed";
+            const quantity = typeof safeRun.quantity === "number" ? safeRun.quantity : 0;
+            const runLabel = safeRun.label || "UNKNOWN";
 
             return (
-              <tr key={`${run.id}-${index}`} className="hover:bg-slate-50">
+              <tr key={`${safeRun.id ?? index}-${index}`} className="hover:bg-slate-50">
                 <td className="py-2 pr-3">
-                  <span className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold ${labelColors[run.label] || "text-slate-600 bg-slate-100"}`}>
-                    {run.label}
+                  <span className={`inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold ${labelColors[runLabel] || "text-slate-600 bg-slate-100"}`}>
+                    {runLabel}
                   </span>
                 </td>
-                <td className="py-2 pr-3 text-slate-900 font-mono tabular-nums">{run.quantity.toLocaleString()}</td>
+                <td className="py-2 pr-3 text-slate-900 font-mono tabular-nums">{quantity.toLocaleString()}</td>
                 <td className="py-2 pr-3 text-slate-600">
-                  <span title={scheduledTime.toLocaleString()}>
-                    {scheduledTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                    <span className="block text-[10px] text-slate-400">{scheduledTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                  </span>
+                  {scheduledTime && !isNaN(scheduledTime.getTime()) ? (
+                    <span title={scheduledTime.toLocaleString()}>
+                      {scheduledTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      <span className="block text-[10px] text-slate-400">{scheduledTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
                 </td>
                 <td className="py-2 pr-3">
-                  <StatusPill kind={statusKind[run.status] || "pending"} className="capitalize">
-                    {run.status}
+                  <StatusPill kind={statusKind[safeRun.status] || "pending"} className="capitalize">
+                    {safeRun.status || "pending"}
                   </StatusPill>
-                  {run.error && (
-                    <span className="block text-rose-600 text-[10px] mt-0.5 max-w-[150px] truncate" title={run.error}>
-                      {run.error}
+                  {safeRun.error && (
+                    <span className="block text-rose-600 text-[10px] mt-0.5 max-w-[150px] truncate" title={safeRun.error}>
+                      {safeRun.error}
                     </span>
                   )}
                 </td>
                 <td className="py-2 pr-3">
-                  {isCompleted && run.smmOrderId ? (
-                    <span className="font-mono text-emerald-600">#{run.smmOrderId}</span>
+                  {isCompleted && safeRun.smmOrderId ? (
+                    <span className="font-mono text-emerald-600">#{safeRun.smmOrderId}</span>
                   ) : (
                     <span className="text-slate-400">—</span>
                   )}
                 </td>
                 <td className="py-2">
-                  {executedTime ? (
+                  {executedTime && !isNaN(executedTime.getTime()) ? (
                     <span className="text-slate-600 text-[11px]">
                       {executedTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
@@ -246,13 +235,8 @@ export function OrdersPage({
   }
 
   function toShortLink(link: string) {
-    if (!link) return "—";
+    if (!link || typeof link !== "string") return "—";
     return link.length > 48 ? `${link.slice(0, 30)}…${link.slice(-12)}` : link;
-  }
-
-  function extractReelId(link: string) {
-    const match = link.match(/\/reel\/([^/?]+)/);
-    return match ? match[1] : link.slice(-15);
   }
 
   const groupedOrders = useMemo(() => {
@@ -702,9 +686,11 @@ function OrderDetailPopup({
               </Button>
             )}
             <Button size="sm" variant="outline" onClick={() => onClone(order)}>Clone</Button>
-            <a href={order.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
-              Open link
-            </a>
+            {order.link && (
+              <a href={order.link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                Open link
+              </a>
+            )}
           </div>
         </div>
 
@@ -741,20 +727,26 @@ function OrderDetailPopup({
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {order.runs.map((run, i) => {
-                      const runTime = run.at instanceof Date ? run.at : new Date(run.at);
-                      const isPast = runTime.getTime() <= Date.now();
+                      const rawTime = run?.at instanceof Date ? run.at : new Date(run?.at ?? "");
+                      const runTime = isNaN(rawTime.getTime()) ? null : rawTime;
                       const runStatus = order.runStatuses?.[i] || "pending";
                       return (
                         <tr key={i} className="hover:bg-slate-50">
                           <td className="px-3 py-2 text-slate-500 tabular-nums">{i + 1}</td>
                           <td className="px-3 py-2 text-slate-700">
-                            {runTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                            <span className="block text-[10px] text-slate-400">{runTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                            {runTime ? (
+                              <>
+                                {runTime.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                                <span className="block text-[10px] text-slate-400">{runTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                              </>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
                           </td>
-                          <td className="px-3 py-2 text-slate-900 font-semibold tabular-nums">{(run.views || 0).toLocaleString()}</td>
-                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run.likes || 0}</td>
-                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run.shares || 0}</td>
-                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run.saves || 0}</td>
+                          <td className="px-3 py-2 text-slate-900 font-semibold tabular-nums">{(run?.views || 0).toLocaleString()}</td>
+                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run?.likes || 0}</td>
+                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run?.shares || 0}</td>
+                          <td className="px-3 py-2 text-slate-700 tabular-nums">{run?.saves || 0}</td>
                           <td className="px-3 py-2">
                             <StatusPill kind={runStatus as any} className="capitalize">{runStatus}</StatusPill>
                           </td>
@@ -787,7 +779,12 @@ function OrderDetailPopup({
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
               <p className="text-xs text-slate-500 mb-1">Created</p>
-              <p className="font-medium text-slate-900">{new Date(order.createdAt).toLocaleDateString()}</p>
+              <p className="font-medium text-slate-900">
+                {(() => {
+                  const d = order.createdAt ? new Date(order.createdAt) : null;
+                  return d && !isNaN(d.getTime()) ? d.toLocaleDateString() : "—";
+                })()}
+              </p>
             </div>
           </div>
         </div>
@@ -931,7 +928,7 @@ function BatchDetailPopup({
         <div className="px-6 py-5">
           <h4 className="text-sm font-semibold text-slate-900 mb-3">Individual links ({group.orders.length})</h4>
           <div className="space-y-3">
-            {group.orders.map((order, index) => (
+            {group.orders.map((order) => (
               <OrderCard
                 key={order.id}
                 order={order}
