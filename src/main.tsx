@@ -6,6 +6,7 @@ import { LoginPage } from "./pages/LoginPage.tsx";
 import { AdminPage } from "./pages/AdminPage.tsx";
 import { supabase } from "./lib/supabase.ts";
 import { Spinner } from "./components/ui.tsx";
+import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 
 const STORAGE_KEY = "truesmm-access-key";
 
@@ -92,8 +93,19 @@ function Root() {
   return <App />;
 }
 
+// Global fallback for uncaught runtime errors so the screen never stays white.
+// In development this lets you see the real error in the console; in production
+// it gives the user a recovery button instead of a blank page.
+window.addEventListener("error", (event) => {
+  console.error("Uncaught runtime error:", event.error);
+});
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Root />
+    <ErrorBoundary>
+      <Root />
+    </ErrorBoundary>
   </StrictMode>
 );
+
+
