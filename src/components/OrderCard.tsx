@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { CreatedOrder, OrderStatus } from "../types/order";
 import { RunTable } from "./RunTable";
+import { ErrorBoundary } from "./ErrorBoundary";
 import {
   LineChart,
   Line,
@@ -36,6 +37,7 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
   const safeRunStatuses = order?.runStatuses || [];
   const safeRunErrors = order?.runErrors || [];
   const finishTime = safeRuns[safeRuns.length - 1]?.at;
+  const safeLink = order?.link || "";
 
   const { totalRuns, completedRuns, progressPercent } = useMemo(() => {
     const nextTotalRuns = Math.max(1, safeRuns.length);
@@ -67,44 +69,67 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
   }, [order.status]);
 
   const plannedData = useMemo(() => {
-    const runs = order.runs || [];
+    const runs = order?.runs || [];
     if (runs.length === 0) return [];
 
     const hasCumulative = runs.some((r) => (r.cumulativeViews || 0) > 0);
 
+    const parseTime = (value: Date | string | number | undefined): Date | null => {
+      if (!value) return null;
+      const d = value instanceof Date ? value : new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
     if (hasCumulative) {
-      return runs.map((run) => ({
-        time: run.at instanceof Date ? run.at : new Date(run.at),
-        views: run.cumulativeViews || 0,
-        likes: (run.cumulativeLikes || 0) * 10,
-        shares: (run.cumulativeShares || 0) * 10,
-        saves: (run.cumulativeSaves || 0) * 10,
-        comments: (run.cumulativeComments || 0) * 10,
-      }));
+      return runs
+        .map((run) => {
+          const time = parseTime(run.at);
+          if (!time) return null;
+          return {
+            time: time.getTime(),
+            views: run.cumulativeViews || 0,
+            likes: (run.cumulativeLikes || 0) * 10,
+            shares: (run.cumulativeShares || 0) * 10,
+            saves: (run.cumulativeSaves || 0) * 10,
+            comments: (run.cumulativeComments || 0) * 10,
+          };
+        })
+        .filter((row): row is NonNullable<typeof row> => row !== null);
     }
 
     let cv = 0, cl = 0, cs = 0, csa = 0, cc = 0;
-    return runs.map((run) => {
-      cv += Number(run.views || 0);
-      cl += Number(run.likes || 0);
-      cs += Number(run.shares || 0);
-      csa += Number(run.saves || 0);
-      cc += Number(run.comments || 0);
-      return {
-        time: run.at instanceof Date ? run.at : new Date(run.at),
-        views: cv,
-        likes: cl * 10,
-        shares: cs * 10,
-        saves: csa * 10,
-        comments: cc * 10,
-      };
-    });
-  }, [order.runs]);
+    return runs
+      .map((run) => {
+        const time = parseTime(run.at);
+        if (!time) return null;
+        cv += Number(run.views || 0);
+        cl += Number(run.likes || 0);
+        cs += Number(run.shares || 0);
+        csa += Number(run.saves || 0);
+        cc += Number(run.comments || 0);
+        return {
+          time: time.getTime(),
+          views: cv,
+          likes: cl * 10,
+          shares: cs * 10,
+          saves: csa * 10,
+          comments: cc * 10,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+  }, [order?.runs]);
 
   const shortLink =
-    order.link.length > 56
-      ? `${order.link.slice(0, 36)}…${order.link.slice(-14)}`
-      : order.link;
+    safeLink.length > 56
+      ? `${safeLink.slice(0, 36)}…${safeLink.slice(-14)}`
+      : safeLink;
+
+  const formatDate = (value: Date | string | number | undefined) => {
+    if (!value) return "—";
+    const d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return "—";
+    return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
 
   const handleControl = async (action: "pause" | "resume" | "cancel") => {
     try {
@@ -128,10 +153,10 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
           <h3 className="text-base font-semibold text-slate-900">
             {order.name || `Mission #${order.id.slice(0, 8)}`}
           </h3>
-          <p className="text-xs text-slate-500 truncate max-w-full" title={order.link}>
+          <p className="text-xs text-slate-500 truncate max-w-full" title={safeLink || undefined}>
             {shortLink || "No link provided"}
           </p>
-          {order.schedulerOrderId && (
+          {order?.schedulerOrderId && (
             <p className="text-[10px] text-slate-400 font-mono">ID: {order.schedulerOrderId}</p>
           )}
         </div>
@@ -142,13 +167,11 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
           </StatusPill>
           {finishTime && (
             <p className="text-xs text-slate-500">
-              ETA: {finishTime instanceof Date ? finishTime : new Date(finishTime)
-                ? new Date(finishTime).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
-                : "—"}
+              ETA: {formatDate(finishTime)}
             </p>
           )}
           <p className="text-[10px] text-slate-400">
-            Updated {new Date(order.lastUpdatedAt || order.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+            Updated {formatDate(order.lastUpdatedAt || order.createdAt)}
           </p>
         </div>
       </div>
@@ -196,47 +219,52 @@ export function OrderCard({ order, onControl, onClone, controlBusy }: OrderCardP
       {/* Graph */}
       {plannedData.length > 0 && (
         <div className="h-36 sm:h-44 w-full -mx-1">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={plannedData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e6e8ec" />
-              <XAxis
-                dataKey="time"
-                stroke="#cbd5e1"
-                tick={{ fontSize: 10, fill: "#64748b" }}
-                tickFormatter={(time) => {
-                  try {
+          <ErrorBoundary>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={plannedData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e6e8ec" />
+                <XAxis
+                  dataKey="time"
+                  type="number"
+                  domain={["dataMin", "dataMax"]}
+                  stroke="#cbd5e1"
+                  tick={{ fontSize: 10, fill: "#64748b" }}
+                  tickFormatter={(time) => {
+                    if (!Number.isFinite(time)) return "";
                     const d = new Date(time);
+                    if (isNaN(d.getTime())) return "";
                     return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
-                  } catch { return ""; }
-                }}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                stroke="#cbd5e1"
-                tick={{ fontSize: 10, fill: "#64748b" }}
-                width={32}
-                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "#fff",
-                  border: "1px solid #e6e8ec",
-                  borderRadius: "8px",
-                  fontSize: "11px",
-                  color: "#475569",
-                }}
-                labelFormatter={(label) => {
-                  try { return new Date(label).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
-                  catch { return String(label); }
-                }}
-              />
-              <Line type="basis" dataKey="views" stroke="#4f46e5" strokeWidth={2} dot={false} name="Views" />
-              <Line type="basis" dataKey="likes" stroke="#ec4899" strokeWidth={1.5} dot={false} name="Likes" />
-              <Line type="basis" dataKey="shares" stroke="#0ea5e9" strokeWidth={1.5} dot={false} name="Shares" />
-              <Line type="basis" dataKey="saves" stroke="#8b5cf6" strokeWidth={1.5} dot={false} name="Saves" />
-              <Line type="basis" dataKey="comments" stroke="#10b981" strokeWidth={1.5} dot={false} name="Comments" />
-            </LineChart>
-          </ResponsiveContainer>
+                  }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  stroke="#cbd5e1"
+                  tick={{ fontSize: 10, fill: "#64748b" }}
+                  width={42}
+                  tickFormatter={(v) => (Number.isFinite(v) && v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v ?? ""))}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "#fff",
+                    border: "1px solid #e6e8ec",
+                    borderRadius: "8px",
+                    fontSize: "11px",
+                    color: "#475569",
+                  }}
+                  labelFormatter={(label) => {
+                    if (!Number.isFinite(label)) return String(label ?? "");
+                    const d = new Date(label);
+                    return isNaN(d.getTime()) ? String(label) : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+                  }}
+                />
+                <Line type="basis" dataKey="views" stroke="#4f46e5" strokeWidth={2} dot={false} name="Views" />
+                <Line type="basis" dataKey="likes" stroke="#ec4899" strokeWidth={1.5} dot={false} name="Likes" />
+                <Line type="basis" dataKey="shares" stroke="#0ea5e9" strokeWidth={1.5} dot={false} name="Shares" />
+                <Line type="basis" dataKey="saves" stroke="#8b5cf6" strokeWidth={1.5} dot={false} name="Saves" />
+                <Line type="basis" dataKey="comments" stroke="#10b981" strokeWidth={1.5} dot={false} name="Comments" />
+              </LineChart>
+            </ResponsiveContainer>
+          </ErrorBoundary>
         </div>
       )}
 
