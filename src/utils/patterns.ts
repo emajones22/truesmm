@@ -1145,17 +1145,24 @@ function distributeByViewsProportional(
     1,
     Math.min(runs.length, Math.floor(targetTotal / Math.max(1, minPerRun)))
   );
-  const minActiveNeeded = Number.isFinite(maxPerRun)
+  const minActiveNeeded_raw = Number.isFinite(maxPerRun)
     ? Math.max(1, Math.ceil(targetTotal / Math.max(minPerRun, maxPerRun)))
     : 1;
-  const densityCap = Math.max(
-    minActiveNeeded,
+  let densityCap = Math.max(
+    minActiveNeeded_raw,
     Math.min(maxActiveAllowed, Math.round(runs.length * baseDensityFrac))
   );
+  let minActiveNeeded = minActiveNeeded_raw;
 
   // If we can't reach the target with current maxPerRun, bump it up
+  // AND recalculate densityCap so enough runs are activated to hit the total
   if (Number.isFinite(maxPerRun) && minActiveNeeded > densityCap) {
     maxPerRun = Math.ceil(targetTotal / densityCap);
+    minActiveNeeded = Math.max(1, Math.ceil(targetTotal / Math.max(minPerRun, maxPerRun)));
+    densityCap = Math.max(
+      minActiveNeeded,
+      Math.min(maxActiveAllowed, Math.round(runs.length * (isCustomRatio ? 0.92 : 0.45)))
+    );
   }
 
   const targetActive = clamp(
