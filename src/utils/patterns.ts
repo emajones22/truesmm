@@ -1279,6 +1279,74 @@ function getActiveIndexes(values: number[]): number[] {
     .map((item) => item.index);
 }
 
+// ================================================================
+// 🔥 NEW: Simple distribution that GUARANTEES the exact target total
+// Used when custom ratios are active. No caps, no density limits.
+// Distributes proportionally by view weight, with organic variation.
+// ================================================================
+function distributeExactTotal(
+  runs: { views: number }[],
+  targetTotal: number
+): number[] {
+  if (runs.length === 0 || targetTotal <= 0) {
+    return Array.from({ length: runs.length }, () => 0);
+  }
+
+  const maxViews = Math.max(1, ...runs.map(r => r.views || 0));
+  const minPerRun = Math.max(1, Math.floor(targetTotal / runs.length * 0.3));
+
+  // Weight each run by its views (higher-view runs get more engagement)
+  const weights = runs.map((run, i) => {
+    const viewWeight = Math.max(0.1, (run.views || 0) / maxViews);
+    const t = i / Math.max(1, runs.length - 1);
+    // Slightly favor middle runs for organic look
+    const phaseWeight = t < 0.15 ? 0.6 : t < 0.80 ? 1.1 : 0.9;
+    const noise = 0.85 + Math.random() * 0.3; // 0.85-1.15
+    return Math.max(0.01, viewWeight * phaseWeight * noise);
+  });
+
+  const weightSum = weights.reduce((s, w) => s + w, 0);
+
+  // First pass: allocate proportionally
+  const raw = weights.map(w => Math.max(minPerRun, Math.round((w / weightSum) * targetTotal)));
+  const rawSum = raw.reduce((s, v) => s + v, 0);
+
+  // Fix drift to hit exact total
+  let drift = targetTotal - rawSum;
+  // Sort by weight descending for drift correction
+  const sorted = raw.map((v, i) => ({ v, i, w: weights[i] }))
+    .sort((a, b) => b.w - a.w);
+
+  let ptr = 0;
+  while (drift !== 0 && ptr < runs.length * 100) {
+    const idx = sorted[ptr % sorted.length].i;
+    if (drift > 0) { raw[idx] += 1; drift -= 1; }
+    else if (raw[idx] > minPerRun) { raw[idx] -= 1; drift += 1; }
+    ptr++;
+  }
+
+  return raw;
+}
+
+// Same but for a subset of runs (shares, saves, reposts)
+function distributeExactTotalToSubset(
+  allRuns: { views: number }[],
+  eligibleIndexes: number[],
+  targetTotal: number
+): number[] {
+  const result = Array.from({ length: allRuns.length }, () => 0);
+  if (targetTotal <= 0 || eligibleIndexes.length === 0) return result;
+
+  const subsetRuns = eligibleIndexes.map(i => allRuns[i]);
+  const distributed = distributeExactTotal(subsetRuns, targetTotal);
+
+  eligibleIndexes.forEach((runIdx, i) => {
+    result[runIdx] = distributed[i] || 0;
+  });
+
+  return result;
+}
+
 function normalizeSharesRuns(values: number[], minimum: number): number[] {
   const result = Array.from({ length: values.length }, () => 0);
   if (values.length === 0) return result;
@@ -1427,6 +1495,19 @@ export function createPatternPlan(config: OrderConfig): PatternPlan {
   const likesTotal = config.includeLikes ? Math.max(10, Math.floor(totalViews * likesRatio)) : 0;
   const sharesTotal = config.includeShares ? Math.max(20, Math.floor(totalViews * sharesRatio)) : 0;
   const savesTotal = config.includeSaves ? Math.max(10, Math.floor(totalViews * savesRatio)) : 0;
+
+  // 🔥 DEBUG: Log ratio calculation
+  console.log('[TRUESMM DEBUG]', {
+    totalViews,
+    likesRatio,
+    sharesRatio,
+    savesRatio,
+    likesTotal,
+    sharesTotal,
+    savesTotal,
+    useCustomRatios,
+    runCount: provisionalRuns.length,
+  });
   let commentsTotal = 0;
 
 if (config.includeComments) {
@@ -1454,40 +1535,59 @@ if (config.includeComments) {
 
   // any active engagement run should be >= 10; zero is allowed for skipped runs
   const likesRuns = config.includeLikes
-    ? distributeByViewsProportional(provisionalRuns, likesTotal, 10, 14, 20, useCustomRatios)
+    ? (useCustomRatios
+      ? distributeExactTotal(provisionalRuns, likesTotal)
+      : distributeByViewsProportional(provisionalRuns, likesTotal, 10, 14, 20))
     : viewRuns.map(() => 0);
+
+  // 🔥 DEBUG: Verify actual likes output
+  const actualLikesSum = likesRuns.reduce((s, v) => s + v, 0);
+  const activeLikeRuns = likesRuns.filter(v => v > 0).length;
+  console.log('[TRUESMM DEBUG LIKES]', {
+    likesTotal_target: likesTotal,
+    likesTotal_actual: actualLikesSum,
+    activeRuns: activeLikeRuns,
+    totalRuns: likesRuns.length,
+    maxPerRun: Math.max(...likesRuns),
+    avgPerActive: activeLikeRuns > 0 ? Math.round(actualLikesSum / activeLikeRuns) : 0,
+  });
 
   const likeActiveIndexes = getActiveIndexes(likesRuns);
   const firstLikeIndex = likeActiveIndexes[0] ?? 0;
   const laterLikeIndexes = likeActiveIndexes.filter((index) => index > firstLikeIndex);
-  const fallbackEligibleIndexes = provisionalRuns.map((_, index) => index).filter((index) => index > 0);
+  const allRunIndexes = provisionalRuns.map((_, index) => index);
+  const fallbackEligibleIndexes = allRunIndexes.filter((index) => index > 0);
 
-  // 🔥 FIX: When custom ratios are active, allow more runs to carry engagement
-  // so the totals can actually be reached.
-  const eligibleFilter = useCustomRatios
-    ? ((_: number, i: number) => i % 1 === 0)  // all later indexes
-    : ((_: number, i: number) => i % 2 === 0); // every other
+  // 🔥 FIX: When custom ratios are active, ALL runs are eligible for shares/saves/reposts
+  // (not just every-other like run)
+  const shareEligibleIndexes = useCustomRatios
+    ? allRunIndexes
+    : (likeActiveIndexes.length > 0
+      ? (laterLikeIndexes.length > 0 ? laterLikeIndexes : likeActiveIndexes.slice(-1))
+      : fallbackEligibleIndexes);
 
-  const eligibleFilterOdd = useCustomRatios
-    ? ((_: number, i: number) => i % 1 === 0)  // all later indexes
-    : ((_: number, i: number) => i % 2 === 1 || laterLikeIndexes.length <= 3);
+  const saveEligibleIndexes = useCustomRatios
+    ? allRunIndexes
+    : (likeActiveIndexes.length > 0
+      ? (laterLikeIndexes.length > 0 ? laterLikeIndexes.filter((_, i) => i % 2 === 0) : likeActiveIndexes.slice(-1))
+      : fallbackEligibleIndexes.filter((_, i) => i % 2 === 0));
 
-  const shareEligibleIndexes = likeActiveIndexes.length > 0
-    ? (laterLikeIndexes.length > 0 ? laterLikeIndexes : likeActiveIndexes.slice(-1))
-    : fallbackEligibleIndexes;
-  const saveEligibleIndexes = likeActiveIndexes.length > 0
-    ? (laterLikeIndexes.length > 0 ? laterLikeIndexes.filter(eligibleFilter) : likeActiveIndexes.slice(-1))
-    : fallbackEligibleIndexes.filter(eligibleFilter);
-  const repostEligibleIndexes = likeActiveIndexes.length > 0
-    ? (laterLikeIndexes.length > 0 ? laterLikeIndexes.filter(eligibleFilterOdd) : likeActiveIndexes.slice(-1))
-    : fallbackEligibleIndexes.filter(eligibleFilterOdd);
+  const repostEligibleIndexes = useCustomRatios
+    ? allRunIndexes
+    : (likeActiveIndexes.length > 0
+      ? (laterLikeIndexes.length > 0 ? laterLikeIndexes.filter((_, i) => i % 2 === 1 || laterLikeIndexes.length <= 3) : likeActiveIndexes.slice(-1))
+      : fallbackEligibleIndexes.filter((_, i) => i % 2 === 1 || fallbackEligibleIndexes.length <= 3));
 
   const sharesRuns = config.includeShares
-    ? spreadDistributionToEligibleRuns(provisionalRuns, shareEligibleIndexes, sharesTotal, 10, 14, 20, useCustomRatios)
+    ? (useCustomRatios
+      ? distributeExactTotalToSubset(provisionalRuns, shareEligibleIndexes, sharesTotal)
+      : spreadDistributionToEligibleRuns(provisionalRuns, shareEligibleIndexes, sharesTotal, 10, 14))
     : viewRuns.map(() => 0);
 
   const savesRuns = config.includeSaves
-    ? spreadDistributionToEligibleRuns(provisionalRuns, saveEligibleIndexes, savesTotal, 10, 12, 20, useCustomRatios)
+    ? (useCustomRatios
+      ? distributeExactTotalToSubset(provisionalRuns, saveEligibleIndexes, savesTotal)
+      : spreadDistributionToEligibleRuns(provisionalRuns, saveEligibleIndexes, savesTotal, 10, 12))
     : viewRuns.map(() => 0);
 
   const commentsBase = config.includeComments
@@ -1500,7 +1600,9 @@ if (config.includeComments) {
         : Math.max(10, Math.floor(likesTotal / 3)))
     : 0;
   const repostsRuns = config.includeReposts
-    ? spreadDistributionToEligibleRuns(provisionalRuns, repostEligibleIndexes, repostsTarget, 10, 12, 20, useCustomRatios)
+    ? (useCustomRatios
+      ? distributeExactTotalToSubset(provisionalRuns, repostEligibleIndexes, repostsTarget)
+      : spreadDistributionToEligibleRuns(provisionalRuns, repostEligibleIndexes, repostsTarget, 10, 12))
     : viewRuns.map(() => 0);
   const commentsRuns = (() => {
   const result = Array.from({ length: commentsBase.length }, () => 0);
