@@ -1127,7 +1127,8 @@ function distributeByViewsProportional(
   targetTotal: number,
   minPerRun = 1,
   preferredAvgPerActive = Math.max(minPerRun + 2, minPerRun * 2),
-  maxPerRun = Number.POSITIVE_INFINITY
+  maxPerRun = Number.POSITIVE_INFINITY,
+  isCustomRatio = false
 ): number[] {
   if (runs.length === 0 || targetTotal <= 0) {
     return Array.from({ length: runs.length }, () => 0);
@@ -1135,6 +1136,11 @@ function distributeByViewsProportional(
 
   const result = Array.from({ length: runs.length }, () => 0);
   const maxViews = Math.max(1, ...runs.map((r) => r.views || 0));
+
+  // 🔥 FIX: Dynamically adjust maxPerRun and densityCap for custom ratios
+  // so the distribution can actually reach the target total.
+  const baseDensityFrac = isCustomRatio ? 0.75 : 0.45;
+
   const maxActiveAllowed = Math.max(
     1,
     Math.min(runs.length, Math.floor(targetTotal / Math.max(1, minPerRun)))
@@ -1144,8 +1150,13 @@ function distributeByViewsProportional(
     : 1;
   const densityCap = Math.max(
     minActiveNeeded,
-    Math.min(maxActiveAllowed, Math.round(runs.length * 0.45))
+    Math.min(maxActiveAllowed, Math.round(runs.length * baseDensityFrac))
   );
+
+  // If we can't reach the target with current maxPerRun, bump it up
+  if (Number.isFinite(maxPerRun) && minActiveNeeded > densityCap) {
+    maxPerRun = Math.ceil(targetTotal / densityCap);
+  }
 
   const targetActive = clamp(
     Math.round(targetTotal / Math.max(minPerRun + 1, preferredAvgPerActive)),
@@ -1231,7 +1242,8 @@ function spreadDistributionToEligibleRuns(
   targetTotal: number,
   minPerRun = 10,
   preferredAvgPerActive = Math.max(minPerRun + 4, minPerRun * 2),
-  maxPerRun = 20
+  maxPerRun = 20,
+  isCustomRatio = false
 ): number[] {
   const result = Array.from({ length: runs.length }, () => 0);
   if (targetTotal <= 0 || eligibleIndexes.length === 0) return result;
@@ -1242,7 +1254,8 @@ function spreadDistributionToEligibleRuns(
     targetTotal,
     minPerRun,
     preferredAvgPerActive,
-    maxPerRun
+    maxPerRun,
+    isCustomRatio
   );
 
   eligibleIndexes.forEach((runIndex, index) => {
@@ -1392,10 +1405,10 @@ export function createPatternPlan(config: OrderConfig): PatternPlan {
   // use them directly (no randomization). Otherwise fall back to the
   // original random natural-looking ranges.
   const cr = config.customRatios;
-  const useCustomRatios = cr && (
+  const useCustomRatios = !!(cr && (
     cr.likes > 0 || cr.shares > 0 || cr.saves > 0 ||
     cr.comments > 0 || cr.reposts > 0
-  );
+  ));
 
   const likesRatio = useCustomRatios ? (cr!.likes / 100) : random(0.02, 0.03);
   const sharesRatio = useCustomRatios ? (cr!.shares / 100) : random(0.013, 0.022);
@@ -1434,29 +1447,40 @@ if (config.includeComments) {
 
   // any active engagement run should be >= 10; zero is allowed for skipped runs
   const likesRuns = config.includeLikes
-    ? distributeByViewsProportional(provisionalRuns, likesTotal, 10, 14, 20)
+    ? distributeByViewsProportional(provisionalRuns, likesTotal, 10, 14, 20, useCustomRatios)
     : viewRuns.map(() => 0);
 
   const likeActiveIndexes = getActiveIndexes(likesRuns);
   const firstLikeIndex = likeActiveIndexes[0] ?? 0;
   const laterLikeIndexes = likeActiveIndexes.filter((index) => index > firstLikeIndex);
   const fallbackEligibleIndexes = provisionalRuns.map((_, index) => index).filter((index) => index > 0);
+
+  // 🔥 FIX: When custom ratios are active, allow more runs to carry engagement
+  // so the totals can actually be reached.
+  const eligibleFilter = useCustomRatios
+    ? ((_: number, i: number) => i % 1 === 0)  // all later indexes
+    : ((_: number, i: number) => i % 2 === 0); // every other
+
+  const eligibleFilterOdd = useCustomRatios
+    ? ((_: number, i: number) => i % 1 === 0)  // all later indexes
+    : ((_: number, i: number) => i % 2 === 1 || laterLikeIndexes.length <= 3);
+
   const shareEligibleIndexes = likeActiveIndexes.length > 0
     ? (laterLikeIndexes.length > 0 ? laterLikeIndexes : likeActiveIndexes.slice(-1))
     : fallbackEligibleIndexes;
   const saveEligibleIndexes = likeActiveIndexes.length > 0
-    ? (laterLikeIndexes.length > 0 ? laterLikeIndexes.filter((_, index) => index % 2 === 0) : likeActiveIndexes.slice(-1))
-    : fallbackEligibleIndexes.filter((_, index) => index % 2 === 0);
+    ? (laterLikeIndexes.length > 0 ? laterLikeIndexes.filter(eligibleFilter) : likeActiveIndexes.slice(-1))
+    : fallbackEligibleIndexes.filter(eligibleFilter);
   const repostEligibleIndexes = likeActiveIndexes.length > 0
-    ? (laterLikeIndexes.length > 0 ? laterLikeIndexes.filter((_, index) => index % 2 === 1 || laterLikeIndexes.length <= 3) : likeActiveIndexes.slice(-1))
-    : fallbackEligibleIndexes.filter((_, index) => index % 2 === 1 || fallbackEligibleIndexes.length <= 3);
+    ? (laterLikeIndexes.length > 0 ? laterLikeIndexes.filter(eligibleFilterOdd) : likeActiveIndexes.slice(-1))
+    : fallbackEligibleIndexes.filter(eligibleFilterOdd);
 
   const sharesRuns = config.includeShares
-    ? spreadDistributionToEligibleRuns(provisionalRuns, shareEligibleIndexes, sharesTotal, 10, 14)
+    ? spreadDistributionToEligibleRuns(provisionalRuns, shareEligibleIndexes, sharesTotal, 10, 14, 20, useCustomRatios)
     : viewRuns.map(() => 0);
 
   const savesRuns = config.includeSaves
-    ? spreadDistributionToEligibleRuns(provisionalRuns, saveEligibleIndexes, savesTotal, 10, 12)
+    ? spreadDistributionToEligibleRuns(provisionalRuns, saveEligibleIndexes, savesTotal, 10, 12, 20, useCustomRatios)
     : viewRuns.map(() => 0);
 
   const commentsBase = config.includeComments
@@ -1469,7 +1493,7 @@ if (config.includeComments) {
         : Math.max(10, Math.floor(likesTotal / 3)))
     : 0;
   const repostsRuns = config.includeReposts
-    ? spreadDistributionToEligibleRuns(provisionalRuns, repostEligibleIndexes, repostsTarget, 10, 12)
+    ? spreadDistributionToEligibleRuns(provisionalRuns, repostEligibleIndexes, repostsTarget, 10, 12, 20, useCustomRatios)
     : viewRuns.map(() => 0);
   const commentsRuns = (() => {
   const result = Array.from({ length: commentsBase.length }, () => 0);
