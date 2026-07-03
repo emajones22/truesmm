@@ -133,7 +133,7 @@ export function NewOrderPage({
   const [postUrl, setPostUrl] = useState(prefillOrder?.link ?? "");
   const [bulkLinks, setBulkLinks] = useState("");
   const [totalViews, setTotalViews] = useState(prefillOrder?.totalViews ?? 50000);
-  const [minViewsPerRun, setMinViewsPerRun] = useState(100);
+  const [minViewsPerRun, setMinViewsPerRun] = useState(10);
   const [selectedApiId, setSelectedApiId] = useState(prefillApiId);
   const [selectedBundleId, setSelectedBundleId] = useState(prefillBundleId);
   const [startDelayHours, setStartDelayHours] = useState(prefillOrder?.startDelayHours ?? 0);
@@ -167,7 +167,7 @@ export function NewOrderPage({
           }
         }
       } catch (error) {
-        console.warn("Could not fetch min views setting, using default 100");
+        console.warn("Could not fetch min views setting, using default 10");
       }
     };
     fetchMinViews();
