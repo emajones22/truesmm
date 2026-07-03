@@ -381,10 +381,10 @@ export async function fetchMinViewsSetting(): Promise<number> {
   try {
     const response = await fetch(endpoint);
     const data = await response.json();
-    return data.minViewsPerRun || 100;
+    return data.minViewsPerRun || 10;
   } catch (error) {
-    console.warn("[Fetch Min Views] Failed, using default 100");
-    return 100;
+    console.warn("[Fetch Min Views] Failed, using default 10");
+    return 10;
   }
 }
 
