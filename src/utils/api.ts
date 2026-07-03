@@ -85,6 +85,24 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function cleanRateString(val: unknown): string {
+  if (val === null || val === undefined) return "0";
+  if (typeof val === "number") return Number.isFinite(val) ? String(val) : "0";
+  const str = String(val).trim();
+  let clean = str.replace(/[^\d.,]/g, "");
+  if (clean.includes(".") && clean.includes(",")) {
+    if (clean.lastIndexOf(",") > clean.lastIndexOf(".")) {
+      clean = clean.replace(/\./g, "").replace(",", ".");
+    } else {
+      clean = clean.replace(/,/g, "");
+    }
+  } else if (clean.includes(",")) {
+    clean = clean.replace(",", ".");
+  }
+  const parsed = parseFloat(clean);
+  return Number.isFinite(parsed) ? String(parsed) : "0";
+}
+
 export async function fetchServices(apiUrl: string, apiKey: string): Promise<ApiService[]> {
   const endpoint = `${BACKEND_BASE_URL.replace(/\/$/, "")}/api/services`;
   console.info("[Fetch Services] Sending request", { endpoint, apiUrl });
@@ -136,7 +154,7 @@ export async function fetchServices(apiUrl: string, apiKey: string): Promise<Api
         id,
         name,
         type: String(service.type ?? "").trim(),
-        rate: String(service.rate ?? "").trim(),
+        rate: cleanRateString(service.rate ?? service.price ?? service.cost ?? service.amount),
         min: toNumber(service.min),
         max: toNumber(service.max),
       } satisfies ApiService;
