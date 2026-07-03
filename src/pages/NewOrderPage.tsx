@@ -328,7 +328,10 @@ export function NewOrderPage({
     const findSvc = (targetId?: string | number) => {
       if (targetId === null || targetId === undefined || targetId === "") return undefined;
       const t = String(targetId).trim();
-      return selApi.services.find(s => String(s.id || "").trim() === t || String(s.service || "").trim() === t);
+      return selApi.services.find(s => {
+        const sid = String(s.id ?? (s as any).service ?? (s as any).services ?? (s as any).service_id ?? (s as any).serviceId ?? "").trim();
+        return sid === t;
+      });
     };
 
     const viewsService = findSvc(selBundle.serviceIds.views);
@@ -370,12 +373,22 @@ export function NewOrderPage({
     const repostsRate = parseRate(repostsService?.rate ?? repostsService?.price ?? repostsService?.cost);
     const commentsRate = parseRate(commentsService?.rate ?? commentsService?.price ?? commentsService?.cost);
 
-    const viewsPrice = (totalViewsQty / 1000) * viewsRate;
-    const likesPrice = includeLikes ? (totalLikesQty / 1000) * likesRate : 0;
-    const sharesPrice = includeShares ? (totalSharesQty / 1000) * sharesRate : 0;
-    const savesPrice = includeSaves ? (totalSavesQty / 1000) * savesRate : 0;
-    const repostsPrice = includeReposts ? (totalRepostsQty / 1000) * repostsRate : 0;
-    const commentsPrice = includeComments ? (totalCommentsQty / 1000) * commentsRate : 0;
+    const isSmmsocial = selApi.url.toLowerCase().includes("smmsocialmedia") || selApi.name.toLowerCase().includes("smmsocialmedia");
+    let rateMultiplier = 1;
+    if (!isSmmsocial) {
+      const isYoyo = selApi.url.toLowerCase().includes("yoyomedia") || selApi.name.toLowerCase().includes("yoyomedia");
+      const checkRate = viewsRate > 0 ? viewsRate : (likesRate > 0 ? likesRate : (sharesRate > 0 ? sharesRate : 0));
+      if (isYoyo || (checkRate > 0 && checkRate < 1.0)) {
+        rateMultiplier = 84;
+      }
+    }
+
+    const viewsPrice = (totalViewsQty / 1000) * (viewsRate * rateMultiplier);
+    const likesPrice = includeLikes ? (totalLikesQty / 1000) * (likesRate * rateMultiplier) : 0;
+    const sharesPrice = includeShares ? (totalSharesQty / 1000) * (sharesRate * rateMultiplier) : 0;
+    const savesPrice = includeSaves ? (totalSavesQty / 1000) * (savesRate * rateMultiplier) : 0;
+    const repostsPrice = includeReposts ? (totalRepostsQty / 1000) * (repostsRate * rateMultiplier) : 0;
+    const commentsPrice = includeComments ? (totalCommentsQty / 1000) * (commentsRate * rateMultiplier) : 0;
     const total = viewsPrice + likesPrice + sharesPrice + savesPrice + repostsPrice + commentsPrice;
 
     return {
