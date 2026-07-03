@@ -1537,16 +1537,13 @@ export function createPatternPlan(config: OrderConfig): PatternPlan {
   void commentsRatio;
 
   const likesTotal = config.includeLikes ? Math.max(10, Math.floor(totalViews * likesRatio)) : 0;
-  const sharesTotal = config.includeShares ? Math.max(20, Math.floor(totalViews * sharesRatio)) : 0;
+  const sharesTotal = config.includeShares ? Math.max(10, Math.floor(totalViews * sharesRatio)) : 0;
   const savesTotal = config.includeSaves ? Math.max(10, Math.floor(totalViews * savesRatio)) : 0;
   let commentsTotal = 0;
 
 if (config.includeComments) {
   if (useCustomRatios) {
-    // 🔥 Custom comments ratio: still cap at a sane 200 to respect provider lists,
-    // but otherwise honor what the user set.
-    commentsTotal = Math.max(1, Math.min(200, Math.floor(totalViews * (cr!.comments / 100))));
-    if (commentsTotal < 1) commentsTotal = 1;
+    commentsTotal = Math.max(10, Math.min(200, Math.floor(totalViews * (cr!.comments / 100))));
   } else if (totalViews >= 50000) {
     commentsTotal = randomInt(30, 40);
   } else if (totalViews >= 40000) {
@@ -1556,11 +1553,9 @@ if (config.includeComments) {
   } else if (totalViews >= 20000) {
     commentsTotal = randomInt(15, 30);
   } else if (totalViews >= 10000) {
-    commentsTotal = randomInt(5, 15);
-  } else if (totalViews >= 5000) {
-    commentsTotal = randomInt(5, 7);
+    commentsTotal = randomInt(10, 15);
   } else {
-    commentsTotal = 5;
+    commentsTotal = 10;
   }
 }
 
@@ -1603,10 +1598,6 @@ if (config.includeComments) {
     ? distributeExactTotalToSubset(provisionalRuns, saveEligibleIndexes, savesTotal, 10, 12)
     : viewRuns.map(() => 0);
 
-  const commentsBase = config.includeComments
-  ? distributeByViewsProportional(provisionalRuns, commentsTotal, 1)
-  : viewRuns.map(() => 0);
-
   const repostsTarget = config.includeReposts
     ? (useCustomRatios
         ? Math.max(10, Math.floor(totalViews * (cr!.reposts / 100)))
@@ -1615,40 +1606,10 @@ if (config.includeComments) {
   const repostsRuns = config.includeReposts
     ? distributeExactTotalToSubset(provisionalRuns, repostEligibleIndexes, repostsTarget, 10, 12)
     : viewRuns.map(() => 0);
-  const commentsRuns = (() => {
-  const result = Array.from({ length: commentsBase.length }, () => 0);
 
-  if (commentsTotal === 0) return result;
-
-  // 🔥 decide how many runs will have comments
-  const maxRuns = Math.min(commentsBase.length, Math.ceil(commentsTotal / 5));
-  const activeRuns = randomInt(1, maxRuns);
-
-  const indexes = Array.from({ length: commentsBase.length }, (_, i) => i)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, activeRuns);
-
-  let remaining = commentsTotal;
-
-  for (let i = 0; i < indexes.length; i++) {
-    const isLast = i === indexes.length - 1;
-
-    let value;
-
-    if (isLast) {
-      value = remaining;
-    } else {
-      // ensure future runs can still have at least 5
-      const maxAllowed = remaining - (indexes.length - i - 1) * 5;
-      value = Math.min(maxAllowed, randomInt(5, 10));
-    }
-
-    result[indexes[i]] = value;
-    remaining -= value;
-  }
-
-  return result;
-})();
+  const commentsRuns = config.includeComments
+    ? distributeExactTotal(provisionalRuns, commentsTotal, 10, 12)
+    : viewRuns.map(() => 0);
 
   let cumulativeViews = 0;
   let cumulativeLikes = 0;
