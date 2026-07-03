@@ -1286,59 +1286,103 @@ function getActiveIndexes(values: number[]): number[] {
 // ================================================================
 function distributeExactTotal(
   runs: { views: number }[],
-  targetTotal: number
+  targetTotal: number,
+  minPerRun = 10,
+  preferredAvgPerActive = 13
 ): number[] {
-  if (runs.length === 0 || targetTotal <= 0) {
-    return Array.from({ length: runs.length }, () => 0);
+  const result = Array.from({ length: runs.length }, () => 0);
+  if (runs.length === 0 || targetTotal <= 0) return result;
+
+  if (targetTotal < minPerRun) {
+    let bestIdx = 0;
+    let maxV = -1;
+    runs.forEach((r, idx) => {
+      if ((r.views || 0) > maxV) { maxV = r.views || 0; bestIdx = idx; }
+    });
+    result[bestIdx] = targetTotal;
+    return result;
   }
 
   const maxViews = Math.max(1, ...runs.map(r => r.views || 0));
-  const minPerRun = Math.max(1, Math.floor(targetTotal / runs.length * 0.3));
-
-  // Weight each run by its views (higher-view runs get more engagement)
   const weights = runs.map((run, i) => {
     const viewWeight = Math.max(0.1, (run.views || 0) / maxViews);
     const t = i / Math.max(1, runs.length - 1);
-    // Slightly favor middle runs for organic look
     const phaseWeight = t < 0.15 ? 0.6 : t < 0.80 ? 1.1 : 0.9;
-    const noise = 0.85 + Math.random() * 0.3; // 0.85-1.15
+    const noise = 0.85 + Math.random() * 0.3;
     return Math.max(0.01, viewWeight * phaseWeight * noise);
   });
 
-  const weightSum = weights.reduce((s, w) => s + w, 0);
+  const maxPossibleActive = Math.max(1, Math.min(runs.length, Math.floor(targetTotal / Math.max(1, minPerRun))));
+  const desiredActive = Math.max(1, Math.min(runs.length, Math.round(targetTotal / Math.max(minPerRun + 1, preferredAvgPerActive))));
+  const activeCount = Math.min(maxPossibleActive, desiredActive);
 
-  // First pass: allocate proportionally
-  const raw = weights.map(w => Math.max(minPerRun, Math.round((w / weightSum) * targetTotal)));
-  const rawSum = raw.reduce((s, v) => s + v, 0);
+  const selectedIndexes = activeCount >= runs.length
+    ? Array.from({ length: runs.length }, (_, i) => i)
+    : selectEngagementRuns(runs.length, activeCount, weights);
 
-  // Fix drift to hit exact total
-  let drift = targetTotal - rawSum;
-  // Sort by weight descending for drift correction
-  const sorted = raw.map((v, i) => ({ v, i, w: weights[i] }))
-    .sort((a, b) => b.w - a.w);
+  if (selectedIndexes.length === 0) return result;
 
-  let ptr = 0;
-  while (drift !== 0 && ptr < runs.length * 100) {
-    const idx = sorted[ptr % sorted.length].i;
-    if (drift > 0) { raw[idx] += 1; drift -= 1; }
-    else if (raw[idx] > minPerRun) { raw[idx] -= 1; drift += 1; }
-    ptr++;
+  const values = Array.from({ length: selectedIndexes.length }, () => minPerRun);
+  let remaining = targetTotal - selectedIndexes.length * minPerRun;
+
+  const selectedWeights = selectedIndexes.map(idx => weights[idx]);
+  const selectedWeightSum = selectedWeights.reduce((s, w) => s + w, 0);
+
+  if (remaining > 0 && selectedWeightSum > 0) {
+    const rawExtra = selectedWeights.map(w => Math.floor((w / selectedWeightSum) * remaining));
+    rawExtra.forEach((val, i) => { values[i] += val; });
+    let extraSum = rawExtra.reduce((s, v) => s + v, 0);
+    let drift = remaining - extraSum;
+
+    let ptr = 0;
+    while (drift > 0 && ptr < selectedIndexes.length * 10) {
+      values[ptr % selectedIndexes.length] += 1;
+      drift -= 1;
+      ptr++;
+    }
   }
 
-  return raw;
+  for (let i = 1; i < values.length; i++) {
+    if (values[i] === values[i - 1] && values[i] > minPerRun && Math.random() < 0.5) {
+      values[i] -= 1;
+      values[i - 1] += 1;
+    }
+  }
+
+  let currentSum = values.reduce((s, v) => s + v, 0);
+  let finalDrift = targetTotal - currentSum;
+  let guard = 0;
+  while (finalDrift !== 0 && guard < selectedIndexes.length * 30) {
+    const idx = guard % selectedIndexes.length;
+    if (finalDrift > 0) {
+      values[idx] += 1;
+      finalDrift -= 1;
+    } else if (finalDrift < 0 && values[idx] > minPerRun) {
+      values[idx] -= 1;
+      finalDrift += 1;
+    }
+    guard++;
+  }
+
+  selectedIndexes.forEach((runIdx, i) => {
+    result[runIdx] = Math.max(0, values[i]);
+  });
+
+  return result;
 }
 
-// Same but for a subset of runs (shares, saves, reposts)
 function distributeExactTotalToSubset(
   allRuns: { views: number }[],
   eligibleIndexes: number[],
-  targetTotal: number
+  targetTotal: number,
+  minPerRun = 10,
+  preferredAvgPerActive = 13
 ): number[] {
   const result = Array.from({ length: allRuns.length }, () => 0);
   if (targetTotal <= 0 || eligibleIndexes.length === 0) return result;
 
   const subsetRuns = eligibleIndexes.map(i => allRuns[i]);
-  const distributed = distributeExactTotal(subsetRuns, targetTotal);
+  const distributed = distributeExactTotal(subsetRuns, targetTotal, minPerRun, preferredAvgPerActive);
 
   eligibleIndexes.forEach((runIdx, i) => {
     result[runIdx] = distributed[i] || 0;
@@ -1404,8 +1448,8 @@ function detectRisk(viewsPerHour: number, variancePercent: number, hours: number
 
 // 🔥 MAIN FUNCTION - Now uses config.minViewsPerRun
 export function createPatternPlan(config: OrderConfig): PatternPlan {
-  // 🔥 Get minViewsPerRun from config (default to 100 if not set)
-  const minViewsPerRun = config.minViewsPerRun || 100;
+  // 🔥 Get minViewsPerRun from config (default to 10 if not set)
+  const minViewsPerRun = config.minViewsPerRun || 10;
   
   const presetProfile = resolvePresetProfile(config.quickPreset);
   const selectedPatternProfile = pickPatternProfile(presetProfile.patternType);
@@ -1495,19 +1539,6 @@ export function createPatternPlan(config: OrderConfig): PatternPlan {
   const likesTotal = config.includeLikes ? Math.max(10, Math.floor(totalViews * likesRatio)) : 0;
   const sharesTotal = config.includeShares ? Math.max(20, Math.floor(totalViews * sharesRatio)) : 0;
   const savesTotal = config.includeSaves ? Math.max(10, Math.floor(totalViews * savesRatio)) : 0;
-
-  // 🔥 DEBUG: Log ratio calculation
-  console.log('[TRUESMM DEBUG]', {
-    totalViews,
-    likesRatio,
-    sharesRatio,
-    savesRatio,
-    likesTotal,
-    sharesTotal,
-    savesTotal,
-    useCustomRatios,
-    runCount: provisionalRuns.length,
-  });
   let commentsTotal = 0;
 
 if (config.includeComments) {
@@ -1535,22 +1566,8 @@ if (config.includeComments) {
 
   // any active engagement run should be >= 10; zero is allowed for skipped runs
   const likesRuns = config.includeLikes
-    ? (useCustomRatios
-      ? distributeExactTotal(provisionalRuns, likesTotal)
-      : distributeByViewsProportional(provisionalRuns, likesTotal, 10, 14, 20))
+    ? distributeExactTotal(provisionalRuns, likesTotal, 10, 14)
     : viewRuns.map(() => 0);
-
-  // 🔥 DEBUG: Verify actual likes output
-  const actualLikesSum = likesRuns.reduce((s, v) => s + v, 0);
-  const activeLikeRuns = likesRuns.filter(v => v > 0).length;
-  console.log('[TRUESMM DEBUG LIKES]', {
-    likesTotal_target: likesTotal,
-    likesTotal_actual: actualLikesSum,
-    activeRuns: activeLikeRuns,
-    totalRuns: likesRuns.length,
-    maxPerRun: Math.max(...likesRuns),
-    avgPerActive: activeLikeRuns > 0 ? Math.round(actualLikesSum / activeLikeRuns) : 0,
-  });
 
   const likeActiveIndexes = getActiveIndexes(likesRuns);
   const firstLikeIndex = likeActiveIndexes[0] ?? 0;
@@ -1579,15 +1596,11 @@ if (config.includeComments) {
       : fallbackEligibleIndexes.filter((_, i) => i % 2 === 1 || fallbackEligibleIndexes.length <= 3));
 
   const sharesRuns = config.includeShares
-    ? (useCustomRatios
-      ? distributeExactTotalToSubset(provisionalRuns, shareEligibleIndexes, sharesTotal)
-      : spreadDistributionToEligibleRuns(provisionalRuns, shareEligibleIndexes, sharesTotal, 10, 14))
+    ? distributeExactTotalToSubset(provisionalRuns, shareEligibleIndexes, sharesTotal, 10, 14)
     : viewRuns.map(() => 0);
 
   const savesRuns = config.includeSaves
-    ? (useCustomRatios
-      ? distributeExactTotalToSubset(provisionalRuns, saveEligibleIndexes, savesTotal)
-      : spreadDistributionToEligibleRuns(provisionalRuns, saveEligibleIndexes, savesTotal, 10, 12))
+    ? distributeExactTotalToSubset(provisionalRuns, saveEligibleIndexes, savesTotal, 10, 12)
     : viewRuns.map(() => 0);
 
   const commentsBase = config.includeComments
@@ -1600,9 +1613,7 @@ if (config.includeComments) {
         : Math.max(10, Math.floor(likesTotal / 3)))
     : 0;
   const repostsRuns = config.includeReposts
-    ? (useCustomRatios
-      ? distributeExactTotalToSubset(provisionalRuns, repostEligibleIndexes, repostsTarget)
-      : spreadDistributionToEligibleRuns(provisionalRuns, repostEligibleIndexes, repostsTarget, 10, 12))
+    ? distributeExactTotalToSubset(provisionalRuns, repostEligibleIndexes, repostsTarget, 10, 12)
     : viewRuns.map(() => 0);
   const commentsRuns = (() => {
   const result = Array.from({ length: commentsBase.length }, () => 0);
