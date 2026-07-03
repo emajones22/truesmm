@@ -147,14 +147,14 @@ export async function fetchServices(apiUrl: string, apiKey: string): Promise<Api
 
   return rows
     .map((service) => {
-      const id = String(service.service ?? service.id ?? "").trim();
+      const id = String(service.service ?? service.id ?? (service as any).services ?? (service as any).service_id ?? (service as any).serviceId ?? "").trim();
       const name = String(service.name ?? "").trim();
       if (!id || !name) return null;
       return {
         id,
         name,
         type: String(service.type ?? "").trim(),
-        rate: cleanRateString(service.rate ?? service.price ?? service.cost ?? service.amount),
+        rate: cleanRateString(service.rate ?? service.price ?? service.cost ?? (service as any).amount ?? (service as any).charge),
         min: toNumber(service.min),
         max: toNumber(service.max),
       } satisfies ApiService;
