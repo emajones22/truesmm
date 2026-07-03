@@ -255,7 +255,7 @@ export function NewOrderPage({
 
   const bundleOptions = useMemo(() => {
     if (!selectedApiId) return bundles;
-    return bundles.filter((bundle) => bundle.apiId === selectedApiId);
+    return bundles.filter((bundle) => String(bundle.apiId || "").trim() === String(selectedApiId || "").trim());
   }, [bundles, selectedApiId]);
 
   function isValidUrl(value: string) {
@@ -321,16 +321,22 @@ export function NewOrderPage({
   }, [safePlan.runs]);
 
   const totalCost = useMemo(() => {
-    const selBundle = bundles.find(b => b.id === selectedBundleId);
-    const selApi = apis.find(a => a.id === selectedApiId);
+    const selBundle = bundles.find(b => String(b.id || "").trim() === String(selectedBundleId || "").trim());
+    const selApi = apis.find(a => String(a.id || "").trim() === String(selectedApiId || "").trim());
     if (!selBundle || !selApi || safePlan.runs.length === 0) return null;
 
-    const viewsService = selApi.services.find(s => s.id === selBundle.serviceIds.views);
-    const likesService = selApi.services.find(s => s.id === selBundle.serviceIds.likes);
-    const sharesService = selApi.services.find(s => s.id === selBundle.serviceIds.shares);
-    const savesService = selApi.services.find(s => s.id === selBundle.serviceIds.saves);
-    const repostsService = selApi.services.find(s => s.id === selBundle.serviceIds.reposts);
-    const commentsService = selApi.services.find(s => s.id === selBundle.serviceIds.comments);
+    const findSvc = (targetId?: string | number) => {
+      if (targetId === null || targetId === undefined || targetId === "") return undefined;
+      const t = String(targetId).trim();
+      return selApi.services.find(s => String(s.id || "").trim() === t || String(s.service || "").trim() === t);
+    };
+
+    const viewsService = findSvc(selBundle.serviceIds.views);
+    const likesService = findSvc(selBundle.serviceIds.likes);
+    const sharesService = findSvc(selBundle.serviceIds.shares);
+    const savesService = findSvc(selBundle.serviceIds.saves);
+    const repostsService = findSvc(selBundle.serviceIds.reposts);
+    const commentsService = findSvc(selBundle.serviceIds.comments);
 
     const totalViewsQty = safePlan.runs.reduce((sum, run) => sum + (run.views || 0), 0);
     const totalLikesQty = safePlan.runs.reduce((sum, run) => sum + (run.likes || 0), 0);
@@ -339,12 +345,30 @@ export function NewOrderPage({
     const totalRepostsQty = safePlan.runs.reduce((sum, run) => sum + (run.reposts || 0), 0);
     const totalCommentsQty = safePlan.runs.reduce((sum, run) => sum + (run.comments || 0), 0);
 
-    const viewsRate = parseFloat(viewsService?.rate || "0");
-    const likesRate = parseFloat(likesService?.rate || "0");
-    const sharesRate = parseFloat(sharesService?.rate || "0");
-    const savesRate = parseFloat(savesService?.rate || "0");
-    const repostsRate = parseFloat(repostsService?.rate || "0");
-    const commentsRate = parseFloat(commentsService?.rate || "0");
+    const parseRate = (val: unknown): number => {
+      if (val === null || val === undefined) return 0;
+      if (typeof val === "number") return Number.isFinite(val) ? Math.max(0, val) : 0;
+      const str = String(val).trim();
+      let clean = str.replace(/[^\d.,]/g, "");
+      if (clean.includes(".") && clean.includes(",")) {
+        if (clean.lastIndexOf(",") > clean.lastIndexOf(".")) {
+          clean = clean.replace(/\./g, "").replace(",", ".");
+        } else {
+          clean = clean.replace(/,/g, "");
+        }
+      } else if (clean.includes(",")) {
+        clean = clean.replace(",", ".");
+      }
+      const parsed = parseFloat(clean);
+      return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+    };
+
+    const viewsRate = parseRate(viewsService?.rate ?? viewsService?.price ?? viewsService?.cost);
+    const likesRate = parseRate(likesService?.rate ?? likesService?.price ?? likesService?.cost);
+    const sharesRate = parseRate(sharesService?.rate ?? sharesService?.price ?? sharesService?.cost);
+    const savesRate = parseRate(savesService?.rate ?? savesService?.price ?? savesService?.cost);
+    const repostsRate = parseRate(repostsService?.rate ?? repostsService?.price ?? repostsService?.cost);
+    const commentsRate = parseRate(commentsService?.rate ?? commentsService?.price ?? commentsService?.cost);
 
     const viewsPrice = (totalViewsQty / 1000) * viewsRate;
     const likesPrice = includeLikes ? (totalLikesQty / 1000) * likesRate : 0;
