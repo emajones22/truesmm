@@ -32,14 +32,15 @@ interface BundleManagerProps {
 }
 
 function filterServices(services: ApiService[], keywords: string[]) {
-  return services.filter((service) => {
-    const name = service.name.toLowerCase();
+  const filtered = services.filter((service) => {
+    const name = String(service.name || "").toLowerCase();
     return keywords.some((keyword) => name.includes(keyword));
   });
+  return filtered.length > 0 ? filtered : services;
 }
 
 function getApiServices(apis: ApiPanel[], apiId: string) {
-  return apis.find((api) => api.id === apiId)?.services ?? [];
+  return apis.find((api) => String(api.id || "").trim() === String(apiId || "").trim())?.services ?? [];
 }
 
 function ServiceSelect({
