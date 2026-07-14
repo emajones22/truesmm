@@ -4,8 +4,8 @@ import { Button, Card, Input, StatusPill, EmptyState } from "./ui";
 
 interface APIManagerProps {
   apis: ApiPanel[];
-  onAddApi: (api: { name: string; url: string; key: string }) => void;
-  onEditApi: (id: string, api: { name: string; url: string; key: string }) => void;
+  onAddApi: (api: { name: string; url: string; key: string; currency?: string }) => void;
+  onEditApi: (id: string, api: { name: string; url: string; key: string; currency?: string }) => void;
   onDeleteApi: (id: string) => void;
   onToggleStatus: (id: string) => void;
   onFetchServices: (id: string) => void;
@@ -17,11 +17,13 @@ export function APIManager({ apis, onAddApi, onEditApi, onDeleteApi, onToggleSta
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [key, setKey] = useState("");
+  const [currency, setCurrency] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editUrl, setEditUrl] = useState("");
   const [editKey, setEditKey] = useState("");
+  const [editCurrency, setEditCurrency] = useState("");
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -30,11 +32,17 @@ export function APIManager({ apis, onAddApi, onEditApi, onDeleteApi, onToggleSta
     setEditName(api.name);
     setEditUrl(api.url);
     setEditKey(api.key);
+    setEditCurrency(api.currency || "");
   };
 
   const saveEdit = () => {
     if (!editName.trim() || !editUrl.trim() || !editKey.trim() || !editingId) return;
-    onEditApi(editingId, { name: editName.trim(), url: editUrl.trim(), key: editKey.trim() });
+    const normalizedCurrency = editCurrency.trim().toUpperCase();
+    if (normalizedCurrency && !/^[A-Z]{3}$/.test(normalizedCurrency)) return;
+    onEditApi(editingId, {
+      name: editName.trim(), url: editUrl.trim(), key: editKey.trim(),
+      currency: normalizedCurrency || undefined,
+    });
     setEditingId(null);
   };
 
@@ -76,15 +84,21 @@ export function APIManager({ apis, onAddApi, onEditApi, onDeleteApi, onToggleSta
             onSubmit={(event) => {
               event.preventDefault();
               if (!name.trim() || !url.trim() || !key.trim()) return;
-              onAddApi({ name: name.trim(), url: url.trim(), key: key.trim() });
+              const normalizedCurrency = currency.trim().toUpperCase();
+              if (normalizedCurrency && !/^[A-Z]{3}$/.test(normalizedCurrency)) return;
+              onAddApi({
+                name: name.trim(), url: url.trim(), key: key.trim(),
+                currency: normalizedCurrency || undefined,
+              });
               setName("");
               setUrl("");
               setKey("");
+              setCurrency("");
               setShowForm(false);
             }}
             className="space-y-4"
           >
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Input
                 label="Connection name"
                 value={name}
@@ -103,6 +117,13 @@ export function APIManager({ apis, onAddApi, onEditApi, onDeleteApi, onToggleSta
                 onChange={(event) => setKey(event.target.value)}
                 placeholder="Your API key"
                 type="password"
+              />
+              <Input
+                label="Panel currency (optional)"
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value.toUpperCase().slice(0, 3))}
+                placeholder="Auto-detect, e.g. USD"
+                maxLength={3}
               />
             </div>
             <Button type="submit" variant="primary">Save connection</Button>
@@ -148,6 +169,14 @@ export function APIManager({ apis, onAddApi, onEditApi, onDeleteApi, onToggleSta
                     value={editKey}
                     onChange={(e) => setEditKey(e.target.value)}
                   />
+                  <Input
+                    label="Panel currency (3-letter code)"
+                    value={editCurrency}
+                    onChange={(e) => setEditCurrency(e.target.value.toUpperCase().slice(0, 3))}
+                    placeholder="Auto-detect, e.g. USD"
+                    maxLength={3}
+                  />
+                  <p className="text-[11px] text-slate-500">Save, then sync services to validate currency and refresh its INR rate.</p>
                   <div className="flex gap-2 pt-1">
                     <Button variant="primary" fullWidth onClick={saveEdit}>Save</Button>
                     <Button variant="outline" fullWidth onClick={cancelEdit}>Cancel</Button>
@@ -174,6 +203,16 @@ export function APIManager({ apis, onAddApi, onEditApi, onDeleteApi, onToggleSta
                       <h3 className="text-base font-semibold text-slate-900 truncate">{api.name}</h3>
                       <p className="mt-1 text-xs text-slate-500 break-all font-mono">{api.url}</p>
                       <p className="mt-1 text-xs text-slate-500">{api.services.length} services linked</p>
+                      {api.currency && api.exchangeRateToInr ? (
+                        <p className="mt-1 text-xs font-semibold text-emerald-700">
+                          Pricing: {api.currency} · 1 {api.currency} = ₹{api.exchangeRateToInr.toFixed(4)}
+                          {api.currencySource === "user" ? " · confirmed" : " · detected"}
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs font-semibold text-amber-700">
+                          Pricing currency not confirmed — sync services to configure
+                        </p>
+                      )}
                       {api.lastFetchError && (
                         <p className="mt-1 text-xs text-rose-600 break-words">{api.lastFetchError}</p>
                       )}
