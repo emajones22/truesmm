@@ -15,7 +15,7 @@ import type {
   RunStatus,
 } from "./types/order";
 import { DEFAULT_ENGAGEMENT_RATIOS } from "./types/order";
-import { fetchServices, updateOrderControl, fetchOrderStatus } from "./utils/api";
+import { fetchServices, fetchPanelPricingMetadata, updateOrderControl, fetchOrderStatus } from "./utils/api";
 import { cn } from "./utils/cn";
 import { Button } from "./components/ui";
 
@@ -142,6 +142,10 @@ function hydrateApis(apis: ApiPanel[]): ApiPanel[] {
   return apis.map((api) => ({
     ...api,
     services: Array.isArray(api.services) ? api.services : [],
+    currency: typeof api.currency === "string" ? api.currency.toUpperCase() : undefined,
+    exchangeRateToInr: Number.isFinite(api.exchangeRateToInr) ? api.exchangeRateToInr : undefined,
+    currencySource: api.currencySource,
+    exchangeRateUpdatedAt: api.exchangeRateUpdatedAt,
     lastFetchError: api.lastFetchError,
     lastFetchAt: api.lastFetchAt,
   }));
@@ -395,6 +399,9 @@ export default function App() {
           onCreateOrder={(order) =>
             persistOrders((prev) => [order, ...prev])
           }
+          onPricingMetadataUpdate={(apiId, metadata) => {
+            persistApis(apis.map((api) => api.id === apiId ? { ...api, ...metadata } : api));
+          }}
           onNavigateToOrders={(notice) => {
             if (notice) setOrdersNotice(notice);
             navigateToPage("orders");
@@ -521,6 +528,8 @@ export default function App() {
                 name: api.name,
                 url: api.url,
                 key: api.key,
+                currency: api.currency,
+                currencySource: api.currency ? "user" : undefined,
                 status: "Active",
                 services: [],
               },
@@ -530,7 +539,17 @@ export default function App() {
           onEditApi={(id, api) => {
             const next: ApiPanel[] = apis.map((item) =>
               item.id === id
-                ? { ...item, name: api.name, url: api.url, key: api.key }
+                ? {
+                    ...item,
+                    name: api.name,
+                    url: api.url,
+                    key: api.key,
+                    currency: api.currency,
+                    // Any connection/currency edit requires revalidation before showing cost.
+                    exchangeRateToInr: undefined,
+                    currencySource: api.currency ? "user" : undefined,
+                    exchangeRateUpdatedAt: undefined,
+                  }
                 : item
             );
             persistApis(next);
@@ -555,15 +574,43 @@ export default function App() {
             if (!targetApi) return;
             setFetchingApiId(id);
             try {
-              const services = await fetchServices(
+              const services = await fetchServices(targetApi.url, targetApi.key);
+
+              let pricing = await fetchPanelPricingMetadata(
                 targetApi.url,
-                targetApi.key
+                targetApi.key,
+                targetApi.currency
               );
+              let currencySource: "panel" | "user" | undefined =
+                pricing.currencySource ?? targetApi.currencySource;
+
+              // Many SMM APIs omit currency. Never guess from panel name or rate size.
+              if (!pricing.currency) {
+                const entered = window.prompt(
+                  `${targetApi.name} did not report its account currency. Enter its 3-letter currency code (for example USD, INR, EUR):`,
+                  targetApi.currency || ""
+                );
+                const confirmedCurrency = String(entered || "").trim().toUpperCase();
+                if (!/^[A-Z]{3}$/.test(confirmedCurrency)) {
+                  throw new Error("Services synced, but cost is disabled until a valid 3-letter panel currency is confirmed.");
+                }
+                pricing = await fetchPanelPricingMetadata(
+                  targetApi.url,
+                  targetApi.key,
+                  confirmedCurrency
+                );
+                currencySource = "user";
+              }
+
               const next = apis.map((api) =>
                 api.id === id
                   ? {
                       ...api,
                       services,
+                      currency: pricing.currency || undefined,
+                      currencySource,
+                      exchangeRateToInr: pricing.exchangeRateToInr || undefined,
+                      exchangeRateUpdatedAt: pricing.exchangeRateUpdatedAt || undefined,
                       lastFetchAt: new Date().toISOString(),
                       lastFetchError: undefined,
                     }
