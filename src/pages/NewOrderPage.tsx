@@ -12,7 +12,7 @@ import type {
   QuickPatternPreset,
 } from "../types/order";
 import { DEFAULT_ENGAGEMENT_RATIOS } from "../types/order";
-import { createSmmOrder } from "../utils/api";
+import { createSmmOrder, fetchPanelPricingMetadata } from "../utils/api";
 import { createPatternPlan } from "../utils/patterns";
 import {
   Button,
@@ -28,6 +28,7 @@ interface NewOrderPageProps {
   prefillOrder?: CreatedOrder | null;
   activeRatios?: EngagementRatios;
   onCreateOrder: (order: CreatedOrder) => void;
+  onPricingMetadataUpdate: (apiId: string, metadata: Partial<ApiPanel>) => void;
   onNavigateToOrders: (notice?: string) => void;
 }
 
@@ -82,6 +83,7 @@ export function NewOrderPage({
   prefillOrder,
   activeRatios,
   onCreateOrder,
+  onPricingMetadataUpdate,
   onNavigateToOrders,
 }: NewOrderPageProps) {
   const effectiveRatios = activeRatios ?? DEFAULT_ENGAGEMENT_RATIOS;
@@ -154,6 +156,7 @@ export function NewOrderPage({
   const [createError, setCreateError] = useState("");
   const [createSuccess, setCreateSuccess] = useState("");
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [pricingRefreshError, setPricingRefreshError] = useState("");
 
   useEffect(() => {
     const fetchMinViews = async () => {
@@ -172,6 +175,34 @@ export function NewOrderPage({
     };
     fetchMinViews();
   }, []);
+
+  // Refresh conversion rates older than six hours when an API is selected.
+  useEffect(() => {
+    const selected = apis.find((api) => api.id === selectedApiId);
+    if (!selected?.currency) return;
+    const updatedAt = selected.exchangeRateUpdatedAt
+      ? new Date(selected.exchangeRateUpdatedAt).getTime()
+      : 0;
+    const stale = !selected.exchangeRateToInr || !updatedAt || Date.now() - updatedAt > 6 * 60 * 60 * 1000;
+    if (!stale) return;
+
+    let cancelled = false;
+    setPricingRefreshError("");
+    fetchPanelPricingMetadata(selected.url, selected.key, selected.currency)
+      .then((metadata) => {
+        if (cancelled || !metadata.currency || !metadata.exchangeRateToInr) return;
+        onPricingMetadataUpdate(selected.id, {
+          currency: metadata.currency,
+          currencySource: selected.currencySource || "user",
+          exchangeRateToInr: metadata.exchangeRateToInr,
+          exchangeRateUpdatedAt: metadata.exchangeRateUpdatedAt || new Date().toISOString(),
+        });
+      })
+      .catch((error) => {
+        if (!cancelled) setPricingRefreshError(error instanceof Error ? error.message : "Exchange-rate refresh failed");
+      });
+    return () => { cancelled = true; };
+  }, [selectedApiId, apis]);
 
   const config: OrderConfig = useMemo(
     () => ({
@@ -341,12 +372,27 @@ export function NewOrderPage({
     const repostsService = findSvc(selBundle.serviceIds.reposts);
     const commentsService = findSvc(selBundle.serviceIds.comments);
 
-    const totalViewsQty = safePlan.runs.reduce((sum, run) => sum + (run.views || 0), 0);
-    const totalLikesQty = safePlan.runs.reduce((sum, run) => sum + (run.likes || 0), 0);
-    const totalSharesQty = safePlan.runs.reduce((sum, run) => sum + (run.shares || 0), 0);
-    const totalSavesQty = safePlan.runs.reduce((sum, run) => sum + (run.saves || 0), 0);
-    const totalRepostsQty = safePlan.runs.reduce((sum, run) => sum + (run.reposts || 0), 0);
-    const totalCommentsQty = safePlan.runs.reduce((sum, run) => sum + (run.comments || 0), 0);
+    // Mirror the exact quantities sent/accepted by order creation and addRuns.
+    const totalViewsQty = safePlan.runs.reduce(
+      (sum, run) => sum + Math.max(Math.floor(run.views || 0), minViewsPerRun), 0
+    );
+    const totalLikesQty = safePlan.runs.reduce(
+      (sum, run) => sum + Math.max(0, Math.floor(run.likes || 0)), 0
+    );
+    const totalSharesQty = safePlan.runs.reduce(
+      (sum, run) => sum + Math.max(0, Math.floor(run.shares || 0)), 0
+    );
+    const totalSavesQty = safePlan.runs.reduce(
+      (sum, run) => sum + Math.max(0, Math.floor(run.saves || 0)), 0
+    );
+    const totalRepostsQty = safePlan.runs.reduce((sum, run) => {
+      const quantity = Math.max(0, Math.floor(run.reposts || 0));
+      return sum + (quantity >= 10 ? quantity : 0);
+    }, 0);
+    const totalCommentsQty = safePlan.runs.reduce((sum, run) => {
+      const requested = Math.max(0, Math.floor(run.comments || 0));
+      return sum + Math.min(requested, 10);
+    }, 0);
 
     const parseRate = (val: unknown): number => {
       if (val === null || val === undefined) return 0;
@@ -360,9 +406,17 @@ export function NewOrderPage({
           clean = clean.replace(/,/g, "");
         }
       } else if (clean.includes(",")) {
-        clean = clean.replace(",", ".");
+        const parts = clean.split(",");
+        if (parts.length > 2) {
+          clean = clean.replace(/,/g, "");
+        } else {
+          const [whole, fraction = ""] = parts;
+          clean = fraction.length === 3 && whole !== "0"
+            ? `${whole}${fraction}`
+            : `${whole}.${fraction}`;
+        }
       }
-      const parsed = parseFloat(clean);
+      const parsed = Number(clean);
       return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
     };
 
@@ -373,34 +427,43 @@ export function NewOrderPage({
     const repostsRate = parseRate(repostsService?.rate ?? repostsService?.price ?? repostsService?.cost);
     const commentsRate = parseRate(commentsService?.rate ?? commentsService?.price ?? commentsService?.cost);
 
-    const isSmmsocial = selApi.url.toLowerCase().includes("smmsocialmedia") || selApi.name.toLowerCase().includes("smmsocialmedia");
-    let rateMultiplier = 1;
-    if (!isSmmsocial) {
-      const isYoyo = selApi.url.toLowerCase().includes("yoyomedia") || selApi.name.toLowerCase().includes("yoyomedia");
-      const checkRate = viewsRate > 0 ? viewsRate : (likesRate > 0 ? likesRate : (sharesRate > 0 ? sharesRate : 0));
-      if (isYoyo || (checkRate > 0 && checkRate < 1.0)) {
-        rateMultiplier = 84;
-      }
-    }
+    // A zero/missing rate for any selected service makes the quote incomplete.
+    if (
+      viewsRate <= 0 ||
+      (includeLikes && likesRate <= 0) ||
+      (includeShares && sharesRate <= 0) ||
+      (includeSaves && savesRate <= 0) ||
+      (includeReposts && repostsRate <= 0) ||
+      (includeComments && commentsRate <= 0)
+    ) return null;
 
-    const viewsPrice = (totalViewsQty / 1000) * (viewsRate * rateMultiplier);
-    const likesPrice = includeLikes ? (totalLikesQty / 1000) * (likesRate * rateMultiplier) : 0;
-    const sharesPrice = includeShares ? (totalSharesQty / 1000) * (sharesRate * rateMultiplier) : 0;
-    const savesPrice = includeSaves ? (totalSavesQty / 1000) * (savesRate * rateMultiplier) : 0;
-    const repostsPrice = includeReposts ? (totalRepostsQty / 1000) * (repostsRate * rateMultiplier) : 0;
-    const commentsPrice = includeComments ? (totalCommentsQty / 1000) * (commentsRate * rateMultiplier) : 0;
-    const total = viewsPrice + likesPrice + sharesPrice + savesPrice + repostsPrice + commentsPrice;
+    // Standard SMM API rates are prices per 1,000 units in the panel account's
+    // currency. Currency must be detected or user-confirmed; it is never guessed.
+    const exchangeRate = Number(selApi.exchangeRateToInr);
+    if (!selApi.currency || !Number.isFinite(exchangeRate) || exchangeRate <= 0) return null;
+
+    const viewsNative = (totalViewsQty / 1000) * viewsRate;
+    const likesNative = includeLikes ? (totalLikesQty / 1000) * likesRate : 0;
+    const sharesNative = includeShares ? (totalSharesQty / 1000) * sharesRate : 0;
+    const savesNative = includeSaves ? (totalSavesQty / 1000) * savesRate : 0;
+    const repostsNative = includeReposts ? (totalRepostsQty / 1000) * repostsRate : 0;
+    const commentsNative = includeComments ? (totalCommentsQty / 1000) * commentsRate : 0;
+    const nativeTotal = viewsNative + likesNative + sharesNative + savesNative + repostsNative + commentsNative;
 
     return {
-      total,
-      views: viewsPrice,
-      likes: likesPrice,
-      shares: sharesPrice,
-      saves: savesPrice,
-      reposts: repostsPrice,
-      comments: commentsPrice,
+      total: nativeTotal * exchangeRate,
+      views: viewsNative * exchangeRate,
+      likes: likesNative * exchangeRate,
+      shares: sharesNative * exchangeRate,
+      saves: savesNative * exchangeRate,
+      reposts: repostsNative * exchangeRate,
+      comments: commentsNative * exchangeRate,
+      nativeTotal,
+      currency: selApi.currency,
+      exchangeRate,
+      exchangeRateUpdatedAt: selApi.exchangeRateUpdatedAt,
     };
-  }, [selectedBundleId, selectedApiId, bundles, apis, safePlan.runs, includeLikes, includeShares, includeSaves, includeReposts, includeComments]);
+  }, [selectedBundleId, selectedApiId, bundles, apis, safePlan.runs, minViewsPerRun, customComments, includeLikes, includeShares, includeSaves, includeReposts, includeComments]);
 
   const estimatedRunCount = safePlan.runs.length;
   const averageViewsPerRun = estimatedRunCount > 0 ? Math.round(totalViews / estimatedRunCount) : 0;
@@ -824,6 +887,7 @@ export function NewOrderPage({
             <div className="flex flex-col gap-1 min-w-0">
               {totalCost && totalCost.total > 0 ? (
                 <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Estimated</span>
                   <span className="text-2xl sm:text-3xl font-extrabold text-indigo-700 tabular-nums">
                     ₹{totalCost.total.toFixed(2)}
                   </span>
@@ -859,7 +923,19 @@ export function NewOrderPage({
                       </span>
                     )}
                   </div>
+                  <p className="w-full text-[10px] font-semibold text-slate-500">
+                    {totalCost.nativeTotal.toFixed(4)} {totalCost.currency} converted at 1 {totalCost.currency} = ₹{totalCost.exchangeRate.toFixed(4)}
+                    {totalCost.exchangeRateUpdatedAt
+                      ? ` · rate ${new Date(totalCost.exchangeRateUpdatedAt).toLocaleDateString()}`
+                      : ""}
+                  </p>
                 </div>
+              ) : selectedApiId && selectedBundleId ? (
+                <p className="text-xs font-bold text-amber-700">
+                  {pricingRefreshError
+                    ? `Cost unavailable — ${pricingRefreshError}`
+                    : "Cost unavailable — sync this API, confirm its currency, and verify all selected service rates."}
+                </p>
               ) : (
                 <p className="text-xs font-bold text-slate-500">Select API & bundle to see cost</p>
               )}
