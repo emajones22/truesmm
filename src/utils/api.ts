@@ -97,10 +97,53 @@ function cleanRateString(val: unknown): string {
       clean = clean.replace(/,/g, "");
     }
   } else if (clean.includes(",")) {
-    clean = clean.replace(",", ".");
+    const parts = clean.split(",");
+    if (parts.length > 2) {
+      clean = clean.replace(/,/g, "");
+    } else {
+      const [whole, fraction = ""] = parts;
+      // 1,234 is normally a thousands separator; 0,123 and 12,50 are decimals.
+      clean = fraction.length === 3 && whole !== "0"
+        ? `${whole}${fraction}`
+        : `${whole}.${fraction}`;
+    }
   }
-  const parsed = parseFloat(clean);
+  const parsed = Number(clean);
   return Number.isFinite(parsed) ? String(parsed) : "0";
+}
+
+export interface PanelPricingMetadata {
+  currency: string | null;
+  currencySource: "panel" | null;
+  exchangeRateToInr: number | null;
+  exchangeRateUpdatedAt: string | null;
+  balance?: number | null;
+}
+
+export async function fetchPanelPricingMetadata(
+  apiUrl: string,
+  apiKey: string,
+  currency?: string
+): Promise<PanelPricingMetadata> {
+  const endpoint = `${BACKEND_BASE_URL.replace(/\/$/, "")}/api/panel/pricing-meta`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ apiUrl, apiKey, currency }),
+  });
+  const text = await response.text();
+  let payload: Record<string, unknown> = {};
+  try { payload = JSON.parse(text) as Record<string, unknown>; } catch { /* handled below */ }
+  if (!response.ok) {
+    throw new Error(String(payload.error || `Could not detect panel currency (HTTP ${response.status})`));
+  }
+  return {
+    currency: typeof payload.currency === "string" ? payload.currency : null,
+    currencySource: payload.currencySource === "panel" ? "panel" : null,
+    exchangeRateToInr: typeof payload.exchangeRateToInr === "number" ? payload.exchangeRateToInr : null,
+    exchangeRateUpdatedAt: typeof payload.exchangeRateUpdatedAt === "string" ? payload.exchangeRateUpdatedAt : null,
+    balance: typeof payload.balance === "number" ? payload.balance : null,
+  };
 }
 
 export async function fetchServices(apiUrl: string, apiKey: string): Promise<ApiService[]> {
