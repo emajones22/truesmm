@@ -142,6 +142,12 @@ export interface ApiPanel {
   key: string;
   status: "Active" | "Inactive";
   services: ApiService[];
+  /** ISO 4217 currency used by this panel account (for example USD, INR, EUR). */
+  currency?: string;
+  /** Number of INR for one unit of `currency`. */
+  exchangeRateToInr?: number;
+  currencySource?: "panel" | "user";
+  exchangeRateUpdatedAt?: string;
   lastFetchAt?: string;
   lastFetchError?: string;
 }
