@@ -3,8 +3,8 @@ import type { ApiPanel } from "../types/order";
 
 interface APIsPageProps {
   apis: ApiPanel[];
-  onAddApi: (api: { name: string; url: string; key: string }) => void;
-  onEditApi: (id: string, api: { name: string; url: string; key: string }) => void;
+  onAddApi: (api: { name: string; url: string; key: string; currency?: string }) => void;
+  onEditApi: (id: string, api: { name: string; url: string; key: string; currency?: string }) => void;
   onDeleteApi: (id: string) => void;
   onToggleStatus: (id: string) => void;
   onFetchServices: (id: string) => void;
