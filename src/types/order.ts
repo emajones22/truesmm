@@ -11,7 +11,7 @@ export type OrderStatus =
   | "pending";
 
 export type PatternType =
-  | "smooth-s-curve"
+  | "smooth-s-curve" 
   | "rocket-launch"
   | "sunset-fade"
   | "viral-spike"
