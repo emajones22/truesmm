@@ -4,6 +4,7 @@ import { APIsPage } from "./pages/APIsPage";
 import { BundlesPage } from "./pages/BundlesPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { NewOrderPage } from "./pages/NewOrderPage";
+import { LikesAutomationPage } from "./pages/LikesAutomationPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { RatiosPage } from "./pages/RatiosPage";
 import type {
@@ -22,6 +23,7 @@ import { Button } from "./components/ui";
 type NavKey =
   | "dashboard"
   | "new-order"
+  | "likes-automation"
   | "orders"
   | "apis"
   | "bundles"
@@ -30,6 +32,7 @@ type NavKey =
 const NAV_ITEMS: { key: NavKey; label: string; description: string }[] = [
   { key: "dashboard", label: "Dashboard", description: "Overview & analytics" },
   { key: "new-order", label: "New Order", description: "Create a campaign" },
+  { key: "likes-automation", label: "Likes Automation", description: "Schedule likes only" },
   { key: "orders", label: "Orders", description: "Manage active orders" },
   { key: "apis", label: "APIs", description: "API connections" },
   { key: "bundles", label: "Bundles", description: "Service bundles" },
@@ -172,6 +175,7 @@ export default function App() {
     if (
       saved === "dashboard" ||
       saved === "new-order" ||
+      saved === "likes-automation" ||
       saved === "orders" ||
       saved === "apis" ||
       saved === "bundles" ||
@@ -402,6 +406,20 @@ export default function App() {
           onPricingMetadataUpdate={(apiId, metadata) => {
             persistApis(apis.map((api) => api.id === apiId ? { ...api, ...metadata } : api));
           }}
+          onNavigateToOrders={(notice) => {
+            if (notice) setOrdersNotice(notice);
+            navigateToPage("orders");
+          }}
+        />
+      );
+    }
+
+    if (activePage === "likes-automation") {
+      return (
+        <LikesAutomationPage
+          apis={apis}
+          bundles={bundles}
+          onCreateOrder={(order) => persistOrders((prev) => [order, ...prev])}
           onNavigateToOrders={(notice) => {
             if (notice) setOrdersNotice(notice);
             navigateToPage("orders");
