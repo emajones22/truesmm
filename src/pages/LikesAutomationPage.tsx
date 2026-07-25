@@ -15,10 +15,25 @@ const asPositiveInteger = (value: string, fallback: number) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
-function splitQuantity(total: number, count: number) {
-  const base = Math.floor(total / count);
-  const remainder = total % count;
-  return Array.from({ length: count }, (_, index) => base + (index < remainder ? 1 : 0));
+// Give each run a different, natural-looking amount while preserving the exact total.
+// Every run starts at the provider minimum; the remaining likes are distributed
+// randomly. If the total equals minimum × runs, variation is mathematically impossible.
+function splitQuantity(total: number, count: number, minimum: number, maximum: number) {
+  const quantities = Array.from({ length: count }, () => minimum);
+  let remaining = total - minimum * count;
+
+  while (remaining > 0) {
+    const eligible = quantities.map((quantity, index) => quantity < maximum ? index : -1).filter((index) => index >= 0);
+    if (!eligible.length) break;
+    const index = eligible[Math.floor(Math.random() * eligible.length)];
+    const capacity = maximum - quantities[index];
+    // Small random chunks make the result uneven rather than 10, 10, 10, 10.
+    const chunk = Math.min(remaining, capacity, 1 + Math.floor(Math.random() * Math.min(8, remaining, capacity)));
+    quantities[index] += chunk;
+    remaining -= chunk;
+  }
+
+  return remaining === 0 ? quantities : [];
 }
 
 export function LikesAutomationPage({ apis, bundles, onCreateOrder, onNavigateToOrders }: LikesAutomationPageProps) {
@@ -51,7 +66,7 @@ export function LikesAutomationPage({ apis, bundles, onCreateOrder, onNavigateTo
     const serviceMax = Math.max(serviceMin, Math.floor(likesService?.max || total || serviceMin));
     const maxPossibleRuns = Math.floor(total / serviceMin);
     const count = Math.min(desiredCount, Math.max(1, maxPossibleRuns));
-    const quantities = total >= serviceMin ? splitQuantity(total, count) : [];
+    const quantities = total >= serviceMin ? splitQuantity(total, count, serviceMin, serviceMax) : [];
     return { total, desiredCount, duration, serviceMin, serviceMax, count, quantities };
   }, [totalLikes, runCount, durationHours, likesService]);
 
@@ -60,6 +75,7 @@ export function LikesAutomationPage({ apis, bundles, onCreateOrder, onNavigateTo
     if (!link.trim()) return setError("Enter the post or profile link that should receive likes.");
     if (!selectedBundle || !selectedApi || !likesService) return setError("Select a bundle with a likes service from an active API.");
     if (preview.total < preview.serviceMin) return setError(`This likes service requires at least ${preview.serviceMin.toLocaleString()} likes per run.`);
+    if (!preview.quantities.length) return setError(`This total cannot fit within the selected service maximum of ${preview.serviceMax.toLocaleString()} likes per run. Increase the number of runs or reduce the total.`);
     if (preview.quantities.some((quantity) => quantity > preview.serviceMax)) return setError(`Each run must be no more than ${preview.serviceMax.toLocaleString()} likes for this service. Increase the number of runs or reduce the total.`);
     if (preview.count !== preview.desiredCount) return setError(`The selected service minimum permits at most ${preview.count} runs for this total. Reduce runs or increase total likes.`);
 
@@ -135,7 +151,8 @@ export function LikesAutomationPage({ apis, bundles, onCreateOrder, onNavigateTo
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[['Total likes', preview.total.toLocaleString()], ['Runs', String(preview.count)], ['Per run', preview.quantities.length ? `${Math.min(...preview.quantities).toLocaleString()}–${Math.max(...preview.quantities).toLocaleString()}` : '—'], ['Service minimum', preview.serviceMin.toLocaleString()]].map(([label, value]) => <div key={label} className="rounded-xl bg-pink-50 p-3"><p className="text-xs font-medium text-pink-700">{label}</p><p className="mt-1 text-lg font-bold text-slate-900">{value}</p></div>)}
       </div>
-      <p className="mt-4 text-sm text-slate-500">Runs are spread evenly across the chosen delivery duration. The first run starts after the selected delay.</p>
+      <p className="mt-4 text-sm text-slate-500">Each run gets a randomized likes amount while keeping the exact total and respecting the provider minimum. The first run starts after the selected delay.</p>
+      {preview.quantities.length > 0 && <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700"><span className="font-medium">Planned likes: </span>{preview.quantities.join(", ")}</div>}
       <Button className="mt-5" variant="primary" size="lg" loading={submitting} disabled={!availableBundles.length} onClick={createOrder}>Schedule likes automation</Button>
     </Card>
   </div>;
